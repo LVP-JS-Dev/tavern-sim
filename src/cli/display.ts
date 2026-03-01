@@ -283,6 +283,72 @@ export function formatHeroList(state: GameState): string {
 }
 
 // ============================================================================
+// INCOME FORMATTING
+// ============================================================================
+
+/**
+ * Format income breakdown by hero for display.
+ * Shows each hero's contribution to total income.
+ *
+ * @param state - The game state to format
+ * @returns Formatted income breakdown string
+ *
+ * @example
+ * const incomeText = formatIncomeBreakdown(gameState);
+ * console.log(incomeText);
+ * // ═══════════════════════════════════════
+ * // 📊 INCOME BREAKDOWN
+ * // ═══════════════════════════════════════
+ * // Barkeep: 5.00g/s (Lv.5 @ 1.00g/s per level)
+ * // Bard: 7.50g/s (Lv.3 @ 2.50g/s per level)
+ * // ─────────────────────────────────────────
+ * // TOTAL: 12.50g/s
+ */
+export function formatIncomeBreakdown(state: GameState): string {
+  const lines: string[] = [];
+  const separator = "═".repeat(40);
+
+  lines.push(separator);
+  lines.push("📊 INCOME BREAKDOWN");
+  lines.push(separator);
+  lines.push("");
+
+  if (state.heroes.order.length === 0) {
+    lines.push("No heroes hired yet. No income generated.");
+    lines.push("");
+    lines.push(separator);
+    return lines.join("\n");
+  }
+
+  let totalIncome = 0;
+
+  for (const heroId of state.heroes.order) {
+    const heroState = state.heroes.roster[heroId];
+    const heroConfig = getHeroConfig(heroId);
+
+    if (heroState && heroConfig) {
+      const level = heroState.level;
+      const incomeFromHero = heroState.incomePerSecondU * level;
+      totalIncome += incomeFromHero;
+
+      const incomeDisplay = formatGold(incomeFromHero);
+      const perLevelDisplay = formatGold(heroState.incomePerSecondU);
+
+      lines.push(`${heroConfig.name}:`);
+      lines.push(`   Income: ${incomeDisplay}g/s (Lv.${level} @ ${perLevelDisplay}g/s per level)`);
+    }
+  }
+
+  lines.push("");
+  lines.push("─".repeat(40));
+  lines.push(`TOTAL: ${formatGold(totalIncome)}g/s`);
+  lines.push("");
+  lines.push(separator);
+
+  return lines.join("\n");
+}
+
+// ============================================================================
 // HELP FORMATTING
 // ============================================================================
 
