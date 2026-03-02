@@ -1,0 +1,232 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Fantasy Tavern Tycoon//Roadmap Calendar//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Tavern Tycoon — Roadmap (4 weeks\, 4h/day)
+X-WR-TIMEZONE:Europe/Helsinki
+BEGIN:VEVENT
+UID:da209a3b-7e18-4f95-9df1-6be06305b214@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260216T100000
+DTEND;TZID=Europe/Helsinki:20260216T140000
+SUMMARY:TT — Setup RFC v1.1 pack in repo + index
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:9498991c-dd23-4303-ade3-51ba68d95ee5@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260217T100000
+DTEND;TZID=Europe/Helsinki:20260217T140000
+SUMMARY:TT — Implement Simulation tick pipeline + command ordering
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:3c6f767e-e043-408c-bba9-6eb255848695@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260218T100000
+DTEND;TZID=Europe/Helsinki:20260218T140000
+SUMMARY:TT — Implement StateStore envelope + canonicalization
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:4bc2f70e-d061-4a65-9e06-671c61d0efd8@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260219T100000
+DTEND;TZID=Europe/Helsinki:20260219T140000
+SUMMARY:TT — Add integrity hash + atomic write (temp→swap)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:687135fa-6698-4078-a86f-032480c5ebc7@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260220T100000
+DTEND;TZID=Europe/Helsinki:20260220T140000
+SUMMARY:TT — Implement RNG streams + forbid Math.random in domain
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:cfcddeac-4837-4041-8eb4-f237e4856be2@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260221T100000
+DTEND;TZID=Europe/Helsinki:20260221T140000
+SUMMARY:TT — Implement minimal Replay tape (commands + time updates)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:f70c9836-0eca-4cea-b89e-7e7d3268174b@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260222T100000
+DTEND;TZID=Europe/Helsinki:20260222T140000
+SUMMARY:TT — Implement offline progress clamp policy + events
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:d2d736ce-c520-41b2-a100-a91cf9635b2a@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260223T100000
+DTEND;TZID=Europe/Helsinki:20260223T140000
+SUMMARY:TT — Implement Director scheduling + rare-event lock
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:a614225f-6649-43aa-94bc-635b74abab6e@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260224T100000
+DTEND;TZID=Europe/Helsinki:20260224T140000
+SUMMARY:TT — Implement Event Log ring buffer + major-only policy
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:e12931e7-f13f-4092-aae4-f563234a40d6@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260225T100000
+DTEND;TZID=Europe/Helsinki:20260225T140000
+SUMMARY:TT — Implement ACK_EVENT command (deterministic)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:1fcb76b4-ae29-40d8-a22b-1379d6b79eee@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260226T100000
+DTEND;TZID=Europe/Helsinki:20260226T140000
+SUMMARY:TT — Wire security/offline clamp/state recovery events into log
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:a4ffd586-fb1b-4008-be4d-de02f795cc48@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260227T100000
+DTEND;TZID=Europe/Helsinki:20260227T140000
+SUMMARY:TT — Add perf/limits enforcement skeleton (max NPC etc.)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:c888f329-91fb-4a35-a901-8570f74eb4a6@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260228T100000
+DTEND;TZID=Europe/Helsinki:20260228T140000
+SUMMARY:TT — End-to-end spine: UI command → tick → event → save
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:8c04398e-47d7-400e-a8d5-dcbf0b37c2c3@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260301T100000
+DTEND;TZID=Europe/Helsinki:20260301T140000
+SUMMARY:TT — Stabilize + cleanup + doc notes (implemented)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:d034fa89-6246-41e4-8aed-08e40895b0bd@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260302T100000
+DTEND;TZID=Europe/Helsinki:20260302T140000
+SUMMARY:TT — Implement WorldState + placement validator + deterministic priority
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:7f9851fd-3b65-4628-b94f-8211aaa627dd@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260303T100000
+DTEND;TZID=Europe/Helsinki:20260303T140000
+SUMMARY:TT — Implement PLACE_OBJECT command + placed/rejected events
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:4d3f0316-e9a2-46cb-9a99-1c0c0cbff43a@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260304T100000
+DTEND;TZID=Europe/Helsinki:20260304T140000
+SUMMARY:TT — Implement fixed-point economy (gold_u\, income/tick)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:70cb08cb-6f81-4835-bdb8-394f6bcbe49f@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260305T100000
+DTEND;TZID=Europe/Helsinki:20260305T140000
+SUMMARY:TT — Implement HERO_UPGRADE with partial upgrades allowed
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:03e932d3-2053-4368-b3d6-6aef6e0aaa5f@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260306T100000
+DTEND;TZID=Europe/Helsinki:20260306T140000
+SUMMARY:TT — Integrate Director payments + hero income strict step order
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:9dfa7202-2c4a-4654-b661-dfb69b88997c@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260307T100000
+DTEND;TZID=Europe/Helsinki:20260307T140000
+SUMMARY:TT — Enforce no state writes outside domain (smoke/lint/test)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:c8ac9e41-126b-484d-944c-456a05390bc3@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260308T100000
+DTEND;TZID=Europe/Helsinki:20260308T140000
+SUMMARY:TT — Stabilize + fix regressions + replay sanity
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:8ee45d76-0f67-4ec7-abd7-c7a23a212855@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260309T100000
+DTEND;TZID=Europe/Helsinki:20260309T140000
+SUMMARY:TT — Implement AdventureRun start/progress/complete
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:cbb506ad-c447-4219-9288-e85fe7a03fd7@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260310T100000
+DTEND;TZID=Europe/Helsinki:20260310T140000
+SUMMARY:TT — Implement Loot resolver (tier + value)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:d03b6b76-7a86-4595-86f8-a3957769065e@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260311T100000
+DTEND;TZID=Europe/Helsinki:20260311T140000
+SUMMARY:TT — Implement Traits mutation on adventure completion (clamp)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:04b72511-b1aa-4cee-ba90-00f0f473e00c@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260312T100000
+DTEND;TZID=Europe/Helsinki:20260312T140000
+SUMMARY:TT — Implement Corruption points + stages + hero MISSING
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:08b1de41-6860-42a5-8295-5dab13e51516@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260313T100000
+DTEND;TZID=Europe/Helsinki:20260313T140000
+SUMMARY:TT — Integrate full loop (adventure→loot→traits→corruption→events)
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:66df33bf-3b08-4b17-b1b6-dd29bd857eff@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260314T100000
+DTEND;TZID=Europe/Helsinki:20260314T140000
+SUMMARY:TT — Perf pass under limits + optimizations without nondeterminism
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+BEGIN:VEVENT
+UID:28cd7632-6a0a-48e6-afe4-4fc935b74e99@tavern-tycoon
+DTSTAMP:20260214T074804Z
+DTSTART;TZID=Europe/Helsinki:20260315T100000
+DTEND;TZID=Europe/Helsinki:20260315T140000
+SUMMARY:TT — Release checklist (RFC-0000 acceptance) + v1.1 changelog
+DESCRIPTION:Daily 4h block.\nMain task + mandatory check/tests.\nSource: RFC pack v1.1 (Spec-first).
+END:VEVENT
+END:VCALENDAR
