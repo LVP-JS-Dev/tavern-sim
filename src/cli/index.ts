@@ -252,10 +252,11 @@ async function handleLoad(state: CliState, command: ParsedCommand): Promise<stri
  * @returns Formatted output string
  */
 function handleOffline(state: CliState): string {
+  const now = Date.now();
   const result = reduce(
     state.gameState,
-    { type: "CALCULATE_OFFLINE", now: Date.now() },
-    Date.now()
+    { type: "CALCULATE_OFFLINE", now },
+    now
   );
 
   state.gameState = result.state;
