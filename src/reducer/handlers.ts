@@ -37,7 +37,7 @@ import { processTick } from "../time/tick";
 import { calculateOfflineProgress } from "../time/offline";
 import { calculateTotalIncome } from "../economy/income";
 import { canUpgradeHero } from "../progression/canUpgrade";
-import { calculateTotalUpgradeCost, calculateAffordableUpgrades } from "../config/balance";
+import { calculateTotalUpgradeCost, calculateAffordableUpgrades, TICK_MS } from "../config/balance";
 import { getHeroConfig, isValidHeroId } from "../config/heroes";
 
 // ============================================================================
@@ -317,16 +317,16 @@ export function handleCalculateOffline(
   // Emit security event if time was clamped
   if (offlineResult.wasClamped) {
     const rawDeltaMs = now - lastSeenAtMs;
-    const excessMs = rawDeltaMs - offlineResult.ticksSimulated * 40; // Approximate
+    const excessMs = rawDeltaMs - offlineResult.ticksSimulated * TICK_MS; // Approximate
 
     events.push(
-      securityOfflineClamped(rawDeltaMs, offlineResult.ticksSimulated * 40, excessMs, now)
+      securityOfflineClamped(rawDeltaMs, offlineResult.ticksSimulated * TICK_MS, excessMs, now)
     );
   }
 
   // Calculate actual delta (clamped if necessary)
   const actualDeltaMs = offlineResult.wasClamped
-    ? offlineResult.ticksSimulated * 40 // Approximate from ticks
+    ? offlineResult.ticksSimulated * TICK_MS // Approximate from ticks
     : now - lastSeenAtMs;
 
   // Emit offline progress applied event
@@ -388,7 +388,6 @@ export function applyMultipleTicks(
   tickCount: number,
   startNow: number
 ): ReduceResult {
-  const TICK_MS = 40; // From config/balance
   let currentState = state;
   const allEvents: DomainEvent[] = [];
 
