@@ -7,6 +7,7 @@
  * @module cli/commands
  */
 
+import { MAX_LEVELS_PER_COMMAND, MAX_TICKS } from "../config/balance";
 import type { Action } from "../types/actions";
 
 // ============================================================================
@@ -340,7 +341,10 @@ function parseTickCommand(input: string, args: string[]): TickCommand | UnknownC
     };
   }
 
-  return { type: "TICK", count, raw: input };
+  // Cap tick count to prevent CLI hang from excessive values
+  const cappedCount = Math.min(count, MAX_TICKS);
+
+  return { type: "TICK", count: cappedCount, raw: input };
 }
 
 /**
@@ -378,7 +382,10 @@ function parseUpgradeCommand(input: string, args: string[]): UpgradeCommand | Un
     };
   }
 
-  return { type: "UPGRADE", heroId, levels, raw: input };
+  // Cap levels to prevent excessive iteration in cost calculations
+  const cappedLevels = Math.min(levels, MAX_LEVELS_PER_COMMAND);
+
+  return { type: "UPGRADE", heroId, levels: cappedLevels, raw: input };
 }
 
 /**
