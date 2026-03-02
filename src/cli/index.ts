@@ -11,6 +11,7 @@ import * as readline from "readline";
 import { createInitialState } from "../state/initial";
 import { reduce } from "../reducer";
 import { createFileStorage, type Storage } from "../persistence/file";
+import { TICK_MS } from "../config/balance";
 import type { GameState, DomainEvent } from "../types";
 import {
   parseCommand,
@@ -118,11 +119,12 @@ function handleTick(state: CliState, command: ParsedCommand): string {
   const count = command.count;
   const events: DomainEvent[] = [];
   let currentState = state.gameState;
-  const now = Date.now();
+  const startNow = Date.now();
 
-  // Process each tick
+  // Process each tick with incremented timestamp
   for (let i = 0; i < count; i++) {
-    const result = reduce(currentState, { type: "TICK" }, now);
+    const tickTime = startNow + i * TICK_MS;
+    const result = reduce(currentState, { type: "TICK" }, tickTime);
     currentState = result.state;
     events.push(...result.events);
   }
