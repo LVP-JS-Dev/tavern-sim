@@ -166,6 +166,37 @@ export function calculateAffordableUpgrades(
 }
 
 // ============================================================================
+// LIMIT CONSTANTS
+// ============================================================================
+
+/**
+ * Maximum number of ticks that can be processed in a single command.
+ * Prevents CLI hang from excessive tick counts (e.g., `tick 99999999`).
+ *
+ * Set to 10,000 ticks which at 40ms per tick equals ~6.67 minutes of
+ * simulated game time per command.
+ */
+export const MAX_TICKS = 10000;
+
+/**
+ * Maximum hero level cap.
+ * Prevents integer overflow and provides a progression goal for players.
+ *
+ * At this level, hero income and upgrade costs are still within safe
+ * integer arithmetic bounds.
+ */
+export const MAX_HERO_LEVEL = 1000;
+
+/**
+ * Maximum levels per upgrade command.
+ * Prevents excessive iteration in cost calculations.
+ *
+ * While players can theoretically upgrade to MAX_HERO_LEVEL, each
+ * individual command is limited to this many levels at once.
+ */
+export const MAX_LEVELS_PER_COMMAND = 1000;
+
+// ============================================================================
 // INCOME CONSTANTS
 // ============================================================================
 
