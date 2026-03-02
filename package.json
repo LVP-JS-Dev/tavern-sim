@@ -1,0 +1,33 @@
+{
+  "name": "tavern-tycoon-alpha",
+  "version": "0.1.0",
+  "description": "Economy-first idle/tycoon game simulator with text-based UI. Validates core loop, balance, and progression before investing in visual layer.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx src/cli/index.ts",
+    "cli": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "game",
+    "simulation",
+    "tycoon",
+    "idle",
+    "economy"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
