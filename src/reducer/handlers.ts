@@ -32,7 +32,7 @@ import {
   offlineProgressApplied,
   securityOfflineClamped,
 } from "../types/events";
-import { heroNotFound, invalidHeroId, invalidLevels } from "../types/errors";
+import { heroNotFound, insufficientGold, invalidLevels } from "../types/errors";
 import { processTick } from "../time/tick";
 import { calculateOfflineProgress } from "../time/offline";
 import { calculateTotalIncome } from "../economy/income";
@@ -177,13 +177,19 @@ export function handleUpgradeHero(
   // 5. Check if player has any gold
   const availableGold = state.wallet.gold;
   if (availableGold <= 0) {
+    const singleLevelCost = calculateTotalUpgradeCost(
+      heroConfig.baseUpgradeCost,
+      heroState.level,
+      1,
+      heroConfig.upgradeMultiplier
+    );
     events.push(
       heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD")
     );
     return failure(
       state,
       events,
-      invalidHeroId(heroId) // Using invalidHeroId as a generic error for now
+      insufficientGold(heroId, singleLevelCost, 0)
     );
   }
 
@@ -211,7 +217,7 @@ export function handleUpgradeHero(
     return failure(
       state,
       events,
-      invalidHeroId(heroId) // Using as generic error, actual reason is insufficient gold
+      insufficientGold(heroId, singleUpgradeCost, availableGold)
     );
   }
 
