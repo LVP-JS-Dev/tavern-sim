@@ -30,7 +30,7 @@ describe("deserializeState", () => {
     const json = serializeState(state);
     const restored = deserializeState(json);
 
-    expect(restored.meta.version).toBe("0.1.0");
+    expect(restored.meta.version).toBe("0.2.0");
     expect(restored.meta.rootSeed).toBe(12345);
     // Starting gold: 10g (10,000 in fixed-point units)
     expect(restored.wallet.gold).toBe(10000);
