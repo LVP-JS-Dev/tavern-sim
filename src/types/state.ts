@@ -1,5 +1,5 @@
 /**
- * GameState v0.1.0 Type Definitions
+ * GameState v0.2.0 Type Definitions
  *
  * Core state types for the Tavern Tycoon Alpha economy simulator.
  * All state slices are designed to be JSON-serializable and independently
@@ -7,6 +7,12 @@
  *
  * @module types/state
  */
+
+import type { DirectorState } from '../systems/director';
+import type { AdventureState } from '../systems/adventure';
+import type { WorldState } from '../systems/world';
+import type { EventLogState } from '../systems/event-log';
+import type { PersonalitySlice } from '../systems/personality';
 
 // ============================================================================
 // SCHEMA VERSION
@@ -16,7 +22,7 @@
  * Current schema version for GameState.
  * Used for state migrations when loading older saves.
  */
-export const SCHEMA_VERSION = "0.1.0" as const;
+export const SCHEMA_VERSION = "0.2.0" as const;
 
 export type SchemaVersion = typeof SCHEMA_VERSION;
 
@@ -166,7 +172,7 @@ export interface TimeSlice {
  * @example
  * const state: GameState = {
  *   meta: {
- *     version: "0.1.0",
+ *     version: "0.2.0",
  *     createdAtMs: Date.now(),
  *     lastSeenAtMs: Date.now(),
  *     rootSeed: 12345
@@ -185,7 +191,12 @@ export interface TimeSlice {
  *   },
  *   time: {
  *     lastTickAtMs: Date.now()
- *   }
+ *   },
+ *   director: emptyDirectorState(),
+ *   adventures: emptyAdventureState(),
+ *   world: emptyWorldState(),
+ *   eventLog: emptyEventLogState(),
+ *   personality: emptyPersonalitySlice(),
  * };
  */
 export interface GameState {
@@ -203,6 +214,22 @@ export interface GameState {
 
   /** Time tracking: last tick timestamp */
   readonly time: TimeSlice;
+
+  // v0.2.0 additions
+  /** Director system: visitor spawning and lifecycle */
+  readonly director: DirectorState;
+
+  /** Adventure system: active adventures and loot */
+  readonly adventures: AdventureState;
+
+  /** World system: time, weather, events */
+  readonly world: WorldState;
+
+  /** Event log: history and notifications */
+  readonly eventLog: EventLogState;
+
+  /** Personality system: hero traits and corruption */
+  readonly personality: PersonalitySlice;
 }
 
 // ============================================================================
