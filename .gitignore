@@ -9,3 +9,6 @@
 .security-key
 logs/security/
 .DS_Store
+
+# Worktrees for isolated development
+.worktrees/
