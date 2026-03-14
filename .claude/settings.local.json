@@ -27,8 +27,7 @@
       "Bash(gh pr:*)",
       "Bash(find docs/superpowers -name \"*.md\" 2>/dev/null | head -20)",
       "Bash(grep -rn \"TODO\\\\|FIXME\\\\|XXX\\\\|HACK\" src/ --include=\"*.ts\" 2>/dev/null | head -20)",
-      "Bash(npx vitest:*)",
-      "Bash(cp /tmp/systems-backup/director/* src/systems/director/ && cp /tmp/systems-backup/adventure/* src/systems/adventure/ && rm -rf /tmp/systems-backup && git stash pop)"
+      "Bash(npx vitest:*)"
     ]
   }
 }
