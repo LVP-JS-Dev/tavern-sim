@@ -2,7 +2,33 @@
   "permissions": {
     "allow": [
       "Bash(gh auth:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(npm test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(cat << 'EOF' | npm run cli 2>&1 | head -80\ntick 1000\nstatus\nupgrade barkeep\ntick 500\nstatus\nincome\nheroes\nexit\nEOF)",
+      "Bash(rm -f ./savegame.json && node -e \"\nconst { spawn } = require\\('child_process'\\);\nconst cli = spawn\\('npm', ['run', 'cli'], { stdio: ['pipe', 'pipe', 'inherit'] }\\);\n\nlet output = '';\ncli.stdout.on\\('data', \\(data\\) => { output += data.toString\\(\\); }\\);\n\nconst commands = [\n  'status',\n  'upgrade barkeep 5',\n  'status',\n  'tick 1000',\n  'status',\n  'upgrade barkeep 10',\n  'status',\n  'income',\n  'save test_save.json',\n  'exit'\n];\n\nlet i = 0;\nconst sendNext = \\(\\) => {\n  if \\(i < commands.length\\) {\n    setTimeout\\(\\(\\) => {\n      cli.stdin.write\\(commands[i++] + '\\\\\\\\n'\\);\n      sendNext\\(\\);\n    }, 300\\);\n  } else {\n    setTimeout\\(\\(\\) => {\n      console.log\\('\\\\\\\\n' + '='.repeat\\(60\\)\\);\n      console.log\\(output\\);\n      cli.kill\\(\\);\n    }, 500\\);\n  }\n};\nsendNext\\(\\);\n\" 2>&1)",
+      "Bash(grep -rn \"wallet.gold\\\\|toBe\" tests/ --include=\"*.ts\" 2>/dev/null | head -30)",
+      "Bash(grep -rn \"\\\\.toBe\\(0\\)\" tests/ --include=\"*.test.ts\" | grep -B 5 -A 2 -3 \" tests/)",
+      "Bash(rm -f ./savegame.json && node -e \"\nconst { spawn } = require\\('child_process'\\);\nconst cli = spawn\\('npm', ['run', 'cli'], { stdio: ['pipe', 'pipe', 'inherit'] }\\);\n\nlet output = '';\ncli.stdout.on\\('data', \\(data\\) => { output += data.toString\\(\\); }\\);\n\nconst commands = [\n  'heroes',\n  'tick 500',\n  'upgrade barkeep 3',\n  'heroes',\n  'tick 500',\n  'status',\n  'income',\n  'save',\n  'exit'\n];\n\nlet i = 0;\nconst sendNext = \\(\\) => {\n  if \\(i < commands.length\\) {\n    setTimeout\\(\\(\\) => {\n      cli.stdin.write\\(commands[i++] + '\\\\\\\\n'\\);\n      sendNext\\(\\);\n    }, 300\\);\n  } else {\n    setTimeout\\(\\(\\) => {\n      console.log\\('\\\\\\\\n' + '='.repeat\\(60\\)\\);\n      console.log\\(output\\);\n      cli.kill\\(\\);\n    }, 500\\);\n  }\n};\nsendNext\\(\\);\n\" 2>&1)",
+      "Bash(node -e \"\nconst { createInitialState, serializeState, deserializeState } = require\\('./src/state/initial'\\);\nconst { serializeState, deserializeState } = require\\('./src/state/serialize'\\);\n\nconst state = createInitialState\\(Date.now\\(\\), 12345\\);\nconsole.log\\('Initial state:'\\);\nconsole.log\\('heroes.order:', state.heroes.order\\);\nconsole.log\\('heroes.roster keys:', Object.keys\\(state.heroes.roster\\)\\);\n\n// Now upgrade barkeep\nconst { reduce } = require\\('./src/reducer'\\);\nconst { upgradeHero } = require\\('./src/types/actions'\\);\n\nconst result = reduce\\(state, upgradeHero\\('barkeep', 1\\), Date.now\\(\\)\\);\nconsole.log\\('\\\\\\\\nAfter upgrade:'\\);\nconsole.log\\('heroes.order:', result.state.heroes.order\\);\nconsole.log\\('heroes.roster keys:', Object.keys\\(result.state.heroes.roster\\)\\);\nconsole.log\\('barkeep in roster:', result.state.heroes.roster['barkeep']\\);\n\" 2>&1)",
+      "Bash(node -e \"\nconst { createInitialState } = require\\('./src/state/initial'\\);\nconst { reduce } = require\\('./src/reducer'\\);\nconst { upgradeHero } = require\\('./src/types/actions'\\);\n\nconst state = createInitialState\\(Date.now\\(\\), 12345\\);\nconsole.log\\('Initial state:'\\);\nconsole.log\\('heroes.order:', state.heroes.order\\);\nconsole.log\\('heroes.roster keys:', Object.keys\\(state.heroes.roster\\)\\);\n\nconst result = reduce\\(state, upgradeHero\\('barkeep', 1\\), Date.now\\(\\)\\);\nconsole.log\\('\\\\\\\\nAfter upgrade:'\\);\nconsole.log\\('heroes.order:', result.state.heroes.order\\);\nconsole.log\\('heroes.roster keys:', Object.keys\\(result.state.heroes.roster\\)\\);\nconsole.log\\('barkeep in roster:', result.state.heroes.roster['barkeep']\\);\n\" 2>&1)",
+      "Bash(npx tsx:*)",
+      "WebSearch",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__chrome-devtools__new_page",
+      "Bash(grep -E '\"\\(start|lint\\)\"' /Users/leonidpetrov/Projects/fantasy-tavern-sim/package.json || echo \"Scripts not found\")",
+      "Bash(grep -r \"threshold\" vitest.config.* 2>/dev/null || echo \"No thresholds found in vitest config\")",
+      "Bash(bun test:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh org:*)",
+      "Bash(echo \"\\\\n<!-- Test Copilot review -->\" >> README.md && git add README.md && git commit -m \"docs: test Copilot integration\")",
+      "Bash(gh pr:*)",
+      "Bash(find docs/superpowers -name \"*.md\" 2>/dev/null | head -20)",
+      "Bash(grep -rn \"TODO\\\\|FIXME\\\\|XXX\\\\|HACK\" src/ --include=\"*.ts\" 2>/dev/null | head -20)",
+      "Bash(npx vitest:*)",
+      "Bash(cp /tmp/systems-backup/director/* src/systems/director/ && cp /tmp/systems-backup/adventure/* src/systems/adventure/ && rm -rf /tmp/systems-backup && git stash pop)"
     ]
   }
 }
