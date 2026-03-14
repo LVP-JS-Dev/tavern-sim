@@ -16,6 +16,11 @@ import {
   type TimeSlice,
   SCHEMA_VERSION,
 } from "../types";
+import { emptyDirectorState } from "../systems/director";
+import { emptyAdventureState } from "../systems/adventure";
+import { emptyWorldState } from "../systems/world";
+import { emptyEventLogState } from "../systems/event-log";
+import { emptyPersonalitySlice } from "../systems/personality";
 
 // ============================================================================
 // INITIAL STATE FACTORY
@@ -132,5 +137,11 @@ export function createInitialState(now: number, rootSeed: number): GameState {
     tavern: createInitialTavern(),
     heroes: createInitialHeroes(),
     time: createInitialTime(now),
+    // v0.2.0 additions
+    director: emptyDirectorState(),
+    adventures: emptyAdventureState(),
+    world: emptyWorldState(),
+    eventLog: emptyEventLogState(),
+    personality: emptyPersonalitySlice(),
   };
 }
