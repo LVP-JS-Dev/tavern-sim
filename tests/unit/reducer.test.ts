@@ -527,7 +527,8 @@ describe("CALCULATE_OFFLINE action handling", () => {
 
       const result = reduce(state, calculateOffline(now), now);
 
-      expect(result.state.wallet.gold).toBe(0);
+      // Starting gold: 10g (10,000 in fixed-point units), no income earned
+      expect(result.state.wallet.gold).toBe(10000);
       expect(result.error).toBeUndefined();
     });
 

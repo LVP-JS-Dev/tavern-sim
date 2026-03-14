@@ -160,13 +160,14 @@ describe("GameState serialization roundtrip", () => {
       expect(restored.heroes.order).toEqual([]);
     });
 
-    it("handles zero gold values", () => {
+    it("handles starting gold values", () => {
       const state = createInitialState(Date.now(), 12345);
       const json = serializeState(state);
       const restored = deserializeState(json);
 
-      expect(restored.wallet.gold).toBe(0);
-      expect(restored.wallet.lifetimeEarnedGold).toBe(0);
+      // Starting gold: 10g (10,000 in fixed-point units)
+      expect(restored.wallet.gold).toBe(10000);
+      expect(restored.wallet.lifetimeEarnedGold).toBe(10000);
     });
 
     it("handles very large gold values (fixed-point)", () => {

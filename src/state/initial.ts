@@ -39,14 +39,14 @@ function createInitialMeta(now: number, rootSeed: number): MetaSlice {
 
 /**
  * Creates the initial WalletSlice for a new game.
- * Player starts with zero gold.
+ * Player starts with some starting gold to hire their first hero.
  *
  * @returns A new WalletSlice with initial values
  */
 function createInitialWallet(): WalletSlice {
   return {
-    gold: 0,
-    lifetimeEarnedGold: 0,
+    gold: 10000, // Starting gold to hire first hero (barkeep costs 10g)
+    lifetimeEarnedGold: 10000, // Count starting gold as "earned"
   };
 }
 

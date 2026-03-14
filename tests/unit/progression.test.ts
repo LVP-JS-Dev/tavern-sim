@@ -486,14 +486,16 @@ describe("canAffordUpgrade", () => {
 
   it("higher level heroes need more gold", () => {
     const heroLevel0 = createHeroState(0);
-    const heroLevel10 = createHeroState(10);
+    const heroLevel15 = createHeroState(15);
 
     // Same gold amount
+    // Level 0: cost = 1000 * 1.15^0 = 1000 (can afford with 5000)
+    // Level 15: cost = 1000 * 1.15^15 = 8137 (cannot afford with 5000)
     const gold = 5000;
     const baseCost = 1000;
 
     expect(canAffordUpgrade(heroLevel0, gold, baseCost, 1.15)).toBe(true);
-    expect(canAffordUpgrade(heroLevel10, gold, baseCost, 1.15)).toBe(false);
+    expect(canAffordUpgrade(heroLevel15, gold, baseCost, 1.15)).toBe(false);
   });
 });
 

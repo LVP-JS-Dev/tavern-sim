@@ -145,19 +145,32 @@ export function handleUpgradeHero(
     );
   }
 
-  // 3. Check if hero exists in roster
-  const heroState = state.heroes.roster[heroId];
+  // 3. Check if hero exists in roster - if not, auto-hire at level 0
+  let heroState = state.heroes.roster[heroId];
+  let currentState = state;
   if (!heroState) {
-    // Hero exists in definitions but not in player's roster
-    // This is an edge case - we should initialize the hero first
-    events.push(
-      heroUpgradeRejected(heroId, levels, "HERO_NOT_FOUND")
-    );
-    return failure(
-      state,
-      events,
-      heroNotFound(heroId)
-    );
+    // Auto-hire: initialize hero at level 0 with zero income
+    // This allows players to upgrade any hero directly without a separate hire step
+    const newHeroState: HeroState = {
+      level: 0,
+      incomePerSecondU: 0,
+    };
+    const newRoster = {
+      ...state.heroes.roster,
+      [heroId]: newHeroState,
+    };
+    // Use currentState which may already have the updated order
+    const newOrder = currentState.heroes.order.includes(heroId)
+      ? currentState.heroes.order
+      : [...currentState.heroes.order, heroId];
+    currentState = {
+      ...currentState,
+      heroes: {
+        roster: newRoster,
+        order: newOrder,
+      },
+    };
+    heroState = newHeroState;
   }
 
   // 4. Get hero configuration
@@ -175,7 +188,7 @@ export function handleUpgradeHero(
   }
 
   // 5. Check if player has any gold
-  const availableGold = state.wallet.gold;
+  const availableGold = currentState.wallet.gold;
   if (availableGold <= 0) {
     const singleLevelCost = calculateTotalUpgradeCost(
       heroConfig.baseUpgradeCost,
@@ -233,22 +246,22 @@ export function handleUpgradeHero(
     incomePerSecondU: heroConfig.baseIncomePerSecond, // Base income remains constant
   };
 
-  // Create new state immutably
+  // Create new state immutably - use currentState which has updated heroes
   const newState: GameState = {
-    ...state,
+    ...currentState,
     wallet: {
-      ...state.wallet,
+      ...currentState.wallet,
       gold: newGold,
     },
     heroes: {
-      ...state.heroes,
+      ...currentState.heroes,
       roster: {
-        ...state.heroes.roster,
+        ...currentState.heroes.roster,
         [heroId]: newHeroState,
       },
     },
     meta: {
-      ...state.meta,
+      ...currentState.meta,
       lastSeenAtMs: now,
     },
   };

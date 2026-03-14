@@ -141,7 +141,8 @@ export function percentToMultiplier(percentBonus: number): number {
  * multiplierToPercent(0.8);  // -20 (-20%)
  */
 export function multiplierToPercent(multiplier: number): number {
-  return (multiplier - 1) * 100;
+  // Round to handle floating-point precision issues
+  return Math.round((multiplier - 1) * 100);
 }
 
 // ============================================================================

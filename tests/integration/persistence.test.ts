@@ -565,16 +565,17 @@ describe("Persistence Edge Cases", () => {
     }
   });
 
-  it("handles state with zero gold", async () => {
+  it("handles state with starting gold", async () => {
     const state = createInitialState(Date.now(), 12345);
-    expect(state.wallet.gold).toBe(0);
+    // Starting gold: 10g (10,000 in fixed-point units)
+    expect(state.wallet.gold).toBe(10000);
 
     const storage = new FileStorage(testFile);
     await storage.save(state);
     const loaded = await storage.load();
 
-    expect(loaded.wallet.gold).toBe(0);
-    expect(loaded.wallet.lifetimeEarnedGold).toBe(0);
+    expect(loaded.wallet.gold).toBe(10000);
+    expect(loaded.wallet.lifetimeEarnedGold).toBe(10000);
   });
 
   it("handles state with large gold values", async () => {

@@ -161,7 +161,11 @@ export function formatState(state: GameState): string {
   lines.push("👥 Heroes:");
   lines.push("─".repeat(40));
 
-  if (state.heroes.order.length === 0) {
+  // Check if there are any heroes in the roster
+  const hasHeroes = Object.keys(state.heroes.roster).length > 0 &&
+    state.heroes.order.some(id => state.heroes.roster[id]);
+
+  if (!hasHeroes) {
     lines.push("   No heroes hired yet.");
   } else {
     // Display heroes in order
@@ -309,11 +313,13 @@ export function formatIncomeBreakdown(state: GameState): string {
   const separator = "═".repeat(40);
 
   lines.push(separator);
-  lines.push("📊 INCOME BREAKDOWN");
+  lines.push("📊 INCOME BREAKdown");
   lines.push(separator);
   lines.push("");
 
-  if (state.heroes.order.length === 0) {
+  // Check actual roster, not just order
+  const rosterKeys = Object.keys(state.heroes.roster);
+  if (rosterKeys.length === 0) {
     lines.push("No heroes hired yet. No income generated.");
     lines.push("");
     lines.push(separator);

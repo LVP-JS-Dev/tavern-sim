@@ -536,11 +536,12 @@ describe("Edge Cases", () => {
     const tickResult = reduce(initialState, tick(), initialState.time.lastTickAtMs + 40);
     expect(tickResult.error).toBeUndefined();
 
-    // Offline with no heroes
+    // Offline with no heroes - should keep starting gold (no income earned)
     const returnTime = initialState.meta.lastSeenAtMs + 3600000;
     const offlineResult = reduce(initialState, calculateOffline(returnTime), returnTime);
     expect(offlineResult.error).toBeUndefined();
-    expect(offlineResult.state.wallet.gold).toBe(0);
+    // Starting gold: 10g (10,000 in fixed-point units), no income earned
+    expect(offlineResult.state.wallet.gold).toBe(10000);
   });
 
   it("handles rapid successive actions", () => {

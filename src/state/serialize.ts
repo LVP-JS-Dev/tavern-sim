@@ -50,10 +50,29 @@ export class SerializationError extends Error {
  * const json = serializeState(state);
  * console.log(json); // '{"meta":{"version":"0.1.0",...},...}'
  */
+/**
+ * Recursively sort object keys for canonical JSON output.
+ */
+function sortKeys<T>(obj: T): T {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sortKeys) as T;
+  }
+
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = sortKeys((obj as Record<string, unknown>)[key]);
+  }
+  return sorted as T;
+}
+
 export function serializeState(state: GameState): string {
   try {
-    // Use JSON.stringify with sorted keys for canonical output
-    return JSON.stringify(state, Object.keys(state).sort(), 2);
+    // Recursively sort keys for canonical output, then stringify
+    return JSON.stringify(sortKeys(state), null, 2);
   } catch (error) {
     throw new SerializationError(
       "Failed to serialize game state",

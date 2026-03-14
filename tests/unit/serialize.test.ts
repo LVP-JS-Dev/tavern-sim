@@ -32,7 +32,8 @@ describe("deserializeState", () => {
 
     expect(restored.meta.version).toBe("0.1.0");
     expect(restored.meta.rootSeed).toBe(12345);
-    expect(restored.wallet.gold).toBe(0);
+    // Starting gold: 10g (10,000 in fixed-point units)
+    expect(restored.wallet.gold).toBe(10000);
     expect(restored.tavern.level).toBe(1);
   });
 
