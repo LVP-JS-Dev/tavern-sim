@@ -112,6 +112,31 @@ export interface ExitCommand extends ParsedCommandBase {
 }
 
 /**
+ * Adventures command - list active adventures.
+ */
+export interface AdventuresCommand extends ParsedCommandBase {
+  readonly type: "ADVENTURES";
+}
+
+/**
+ * Start Adventure command - start a new adventure.
+ */
+export interface StartAdventureCommand extends ParsedCommandBase {
+  readonly type: "START_ADVENTURE";
+  /** Type of adventure (hunt, dungeon, escort, investigation) */
+  readonly adventureType: string;
+  /** IDs of heroes to send on adventure */
+  readonly heroIds: readonly string[];
+}
+
+/**
+ * Visitors command - list current visitors.
+ */
+export interface VisitorsCommand extends ParsedCommandBase {
+  readonly type: "VISITORS";
+}
+
+/**
  * Unknown command - parsing failed.
  */
 export interface UnknownCommand extends ParsedCommandBase {
@@ -142,6 +167,9 @@ export type ParsedCommand =
   | ResetCommand
   | HelpCommand
   | ExitCommand
+  | AdventuresCommand
+  | StartAdventureCommand
+  | VisitorsCommand
   | UnknownCommand
   | EmptyCommand;
 
@@ -307,6 +335,32 @@ export function parseCommand(input: string): ParsedCommand {
       }
       return { type: "EXIT", raw: input };
 
+    case "adventures":
+    case "adv":
+      if (args.length > 0) {
+        return {
+          type: "UNKNOWN",
+          raw: input,
+          error: `Command 'adventures' takes no arguments. Got: ${args.join(" ")}`,
+        };
+      }
+      return { type: "ADVENTURES", raw: input };
+
+    case "start-adventure":
+    case "sa":
+      return parseStartAdventureCommand(input, args);
+
+    case "visitors":
+    case "v":
+      if (args.length > 0) {
+        return {
+          type: "UNKNOWN",
+          raw: input,
+          error: `Command 'visitors' takes no arguments. Got: ${args.join(" ")}`,
+        };
+      }
+      return { type: "VISITORS", raw: input };
+
     default:
       return {
         type: "UNKNOWN",
@@ -436,6 +490,39 @@ function parseHelpCommand(input: string, args: string[]): HelpCommand {
 
   // Help takes an optional command name
   return { type: "HELP", command: args[0].toLowerCase(), raw: input };
+}
+
+/**
+ * Parse start-adventure command arguments.
+ */
+function parseStartAdventureCommand(input: string, args: string[]): StartAdventureCommand | UnknownCommand {
+  if (args.length < 2) {
+    return {
+      type: "UNKNOWN",
+      raw: input,
+      error: "Command 'start-adventure' requires an adventure type and at least one hero. Usage: start-adventure <type> <heroId> [heroId...]",
+    };
+  }
+
+  const adventureType = args[0].toLowerCase();
+  const validTypes = ['hunt', 'dungeon', 'escort', 'investigation'];
+
+  if (!validTypes.includes(adventureType)) {
+    return {
+      type: "UNKNOWN",
+      raw: input,
+      error: `Invalid adventure type: '${adventureType}'. Valid types: ${validTypes.join(', ')}`,
+    };
+  }
+
+  const heroIds = args.slice(1);
+
+  return {
+    type: "START_ADVENTURE",
+    adventureType,
+    heroIds,
+    raw: input,
+  };
 }
 
 // ============================================================================
@@ -585,4 +672,25 @@ export function isUnknownCommand(cmd: ParsedCommand): cmd is UnknownCommand {
  */
 export function isEmptyCommand(cmd: ParsedCommand): cmd is EmptyCommand {
   return cmd.type === "EMPTY";
+}
+
+/**
+ * Type guard to check if a command is an AdventuresCommand.
+ */
+export function isAdventuresCommand(cmd: ParsedCommand): cmd is AdventuresCommand {
+  return cmd.type === "ADVENTURES";
+}
+
+/**
+ * Type guard to check if a command is a StartAdventureCommand.
+ */
+export function isStartAdventureCommand(cmd: ParsedCommand): cmd is StartAdventureCommand {
+  return cmd.type === "START_ADVENTURE";
+}
+
+/**
+ * Type guard to check if a command is a VisitorsCommand.
+ */
+export function isVisitorsCommand(cmd: ParsedCommand): cmd is VisitorsCommand {
+  return cmd.type === "VISITORS";
 }
