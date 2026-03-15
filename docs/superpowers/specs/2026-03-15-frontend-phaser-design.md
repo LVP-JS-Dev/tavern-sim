@@ -152,7 +152,7 @@ fantasy-tavern-sim/
 
 | Element | Position | Content |
 |---------|----------|---------|
-| **GoldDisplay** | Top-left (10, 10) | "🪙 1,234" |
+| **GoldDisplay** | Top-left (10, 10) | "🪙 1,234" (divide by `GOLD_MULTIPLIER`) |
 | **IncomeRate** | Below gold | "+10/сек" |
 | **MenuButton** | Top-right (325, 10) | ⚙️ icon |
 | **UpgradePanel** | Bottom (10, 607) | "Upgrade Hero" button |
@@ -179,12 +179,30 @@ fantasy-tavern-sim/
 ### State Bridge API
 
 ```typescript
+import type { GameState, DomainEvent } from '../types';
+import type { GameAction } from '../types/actions';
+
 interface StateBridge {
+  /** Subscribe to state changes. Returns unsubscribe function. */
   subscribe(fn: (state: GameState) => void): () => void;
+
+  /** Subscribe to domain events (for toasts, VFX triggers). */
+  subscribeToEvents(fn: (event: DomainEvent) => void): () => void;
+
+  /** Dispatch user action to be processed in next tick. */
   dispatch(action: GameAction): void;
+
+  /** Get current state snapshot. */
   getState(): GameState;
+
+  /** Force advance simulation by one tick. */
+  tick(): void;
 }
 ```
+
+> **Note:** `dispatch` queues user actions (like `UPGRADE_HERO`) for the next tick cycle.
+> Actions are processed by the reducer, not directly by the pipeline.
+> The simulation advances via `tick()` which calls `pipeline.process()`.
 
 ### Usage in Scene
 
@@ -193,9 +211,12 @@ class TavernScene extends Phaser.Scene {
   private unsubscribe?: () => void;
 
   create() {
+    // Tables are static scene elements, not state-driven
+    this.createTables();
+
     this.unsubscribe = bridge.subscribe((state) => {
       this.syncVisitors(state.director.visitors);
-      this.syncTables(state.tavern);
+      this.syncHeroes(state.heroes.roster, state.heroes.order);
     });
   }
 
@@ -205,14 +226,46 @@ class TavernScene extends Phaser.Scene {
 }
 ```
 
+> **Note:** Visitor positions are managed by the frontend (not in GameState).
+> The Director only tracks visitor lifecycle; visual position/animation
+> is handled by `Visitor.ts` entity.
+
 ### Offline Progress
 
 ```
 On game start:
 1. Load state from LocalStorage
-2. Calculate deltaMs = now - state.meta.lastSeenAtMs
-3. Call offline.process(state, deltaMs)
-4. Apply result → show toast "While you were away: +500 gold"
+2. Calculate total incomePerSecondU from state.heroes.roster
+3. Call calculateOfflineProgress(now, state.meta.lastSeenAtMs, incomePerSecondU)
+4. Apply gold earned to state.wallet.gold
+5. Show toast "While you were away: +X gold"
+```
+
+```typescript
+import { calculateOfflineProgress } from '../time/offline';
+
+function applyOfflineProgress(state: GameState): { state: GameState; goldEarned: GoldU } {
+  const incomePerSecondU = Object.values(state.heroes.roster)
+    .reduce((sum, hero) => sum + hero.incomePerSecondU, 0);
+
+  const result = calculateOfflineProgress(
+    Date.now(),
+    state.meta.lastSeenAtMs,
+    incomePerSecondU
+  );
+
+  return {
+    state: {
+      ...state,
+      wallet: {
+        ...state.wallet,
+        gold: state.wallet.gold + result.goldEarned,
+        lifetimeEarnedGold: state.wallet.lifetimeEarnedGold + result.goldEarned,
+      },
+    },
+    goldEarned: result.goldEarned,
+  };
+}
 ```
 
 ---
