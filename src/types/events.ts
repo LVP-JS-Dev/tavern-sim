@@ -130,6 +130,27 @@ export interface SecurityOfflineClampedEvent {
 }
 
 // ============================================================================
+// WEATHER CHANGED EVENT
+// ============================================================================
+
+/**
+ * Emitted when the weather changes.
+ * Contains the previous and new weather states.
+ */
+export interface WeatherChangedEvent {
+  readonly type: "WEATHER_CHANGED";
+
+  /** Previous weather state */
+  readonly from: import("../systems/world/types").Weather;
+
+  /** New weather state */
+  readonly to: import("../systems/world/types").Weather;
+
+  /** Timestamp when the weather changed */
+  readonly timestamp: number;
+}
+
+// ============================================================================
 // DOMAIN EVENT UNION
 // ============================================================================
 
@@ -183,7 +204,8 @@ export type DomainEvent =
   | HeroUpgradeRejectedEvent
   | GoldEarnedEvent
   | OfflineProgressAppliedEvent
-  | SecurityOfflineClampedEvent;
+  | SecurityOfflineClampedEvent
+  | WeatherChangedEvent;
 
 // ============================================================================
 // EVENT TYPE GUARDS
@@ -230,6 +252,15 @@ export function isSecurityOfflineClampedEvent(
   event: DomainEvent
 ): event is SecurityOfflineClampedEvent {
   return event.type === "SECURITY_OFFLINE_CLAMPED";
+}
+
+/**
+ * Type guard to check if an event is a WeatherChangedEvent.
+ */
+export function isWeatherChangedEvent(
+  event: DomainEvent
+): event is WeatherChangedEvent {
+  return event.type === "WEATHER_CHANGED";
 }
 
 // ============================================================================
@@ -337,5 +368,24 @@ export function securityOfflineClamped(
     cappedDeltaMs,
     excessMs,
     timestampMs,
+  };
+}
+
+/**
+ * Creates a WEATHER_CHANGED event.
+ * @param from - Previous weather state
+ * @param to - New weather state
+ * @param timestamp - Timestamp when weather changed
+ */
+export function weatherChanged(
+  from: import("../systems/world/types").Weather,
+  to: import("../systems/world/types").Weather,
+  timestamp: number
+): WeatherChangedEvent {
+  return {
+    type: "WEATHER_CHANGED",
+    from,
+    to,
+    timestamp,
   };
 }

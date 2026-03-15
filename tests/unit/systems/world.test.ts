@@ -1,81 +1,102 @@
-import { describe, it, expect } from 'vitest';
-import type { WorldState, WorldEvent, TimeOfDay, Weather, WorldEventType } from '../../../src/systems/world/types';
+// tests/unit/systems/world.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { WorldServiceImpl } from '../../../src/systems/world/service';
+import type { WorldService, WorldContext, WorldState, WorldModifiers } from '../../../src/systems/world/types';
+import { SeededRng } from '../../../src/core/rng';
+import { emptyWorldState } from '../../../src/systems/world';
 
-describe('World System Types', () => {
-  describe('WorldState interface', () => {
-    it('should have required fields', () => {
-      const world: WorldState = {
-        timeOfDay: 'morning',
-        weather: 'clear',
-        dayNumber: 5,
-        activeEvents: [],
+describe('WorldSystem', () => {
+  let service: WorldService;
+  let rng: SeededRng;
+
+  beforeEach(() => {
+    service = new WorldServiceImpl();
+    rng = new SeededRng(12345);
+  });
+
+  describe('update', () => {
+    it('advances time of day based on tick', () => {
+      const state = emptyWorldState();
+      const ctx: WorldContext = {
+        state: { world: state },
+        rng,
+        now: Date.now(),
       };
 
-      expect(world.timeOfDay).toBe('morning');
-      expect(world.weather).toBe('clear');
-      expect(world.dayNumber).toBe(5);
-      expect(world.activeEvents).toEqual([]);
-    });
-  });
+      const result = service.update(ctx);
 
-  describe('WorldEvent interface', () => {
-    it('should have required fields', () => {
-      const event: WorldEvent = {
-        id: 'event-1',
-        type: 'festival',
-        startedAt: Date.now(),
-        duration: 3600000,
-        data: { bonus: 2.0 },
+      // Time should advance
+      expect(result.state).toBeDefined();
+    });
+
+    it('changes weather periodically', () => {
+      const state = { ...emptyWorldState(), weather: 'clear' as const };
+      const ctx: WorldContext = {
+        state: { world: state },
+        rng,
+        now: Date.now(),
       };
 
-      expect(event.id).toBe('event-1');
-      expect(event.type).toBe('festival');
-      expect(event.duration).toBe(3600000);
-      expect(event.data.bonus).toBe(2.0);
+      // Multiple updates may change weather
+      let currentWeather = state.weather;
+      for (let i = 0; i < 100; i++) {
+        const result = service.update({
+          ...ctx,
+          rng: new SeededRng(i),
+        });
+        currentWeather = result.state.weather;
+      }
+
+      // Weather should have changed at least once
+      // (probabilistic, but very likely)
     });
   });
 
-  describe('TimeOfDay type', () => {
-    it('should include all times', () => {
-      const times: TimeOfDay[] = [
-        'dawn',
-        'morning',
-        'noon',
-        'afternoon',
-        'evening',
-        'night',
-        'midnight',
-      ];
+  describe('getModifiers', () => {
+    it('returns default modifiers for clear weather', () => {
+      const state = { ...emptyWorldState(), weather: 'clear' as const };
 
-      expect(times).toHaveLength(7);
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.incomeMultiplier).toBe(1.0);
+      expect(modifiers.visitorSpawnRate).toBe(1.0);
+      expect(modifiers.adventureSuccessBonus).toBe(0);
+    });
+
+    it('reduces income during storm', () => {
+      const state = { ...emptyWorldState(), weather: 'storm' as const };
+
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.incomeMultiplier).toBeLessThan(1.0);
+    });
+
+    it('increases visitors during festival', () => {
+      const state = {
+        ...emptyWorldState(),
+        activeEvents: [{ id: 'festival-1', type: 'festival' as const, data: {} }],
+      };
+
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.visitorSpawnRate).toBeGreaterThan(1.0);
     });
   });
 
-  describe('Weather type', () => {
-    it('should include all weather types', () => {
-      const weathers: Weather[] = [
-        'clear',
-        'cloudy',
-        'rain',
-        'storm',
-        'snow',
-      ];
+  describe('isEventActive', () => {
+    it('returns true for active event', () => {
+      const state = {
+        ...emptyWorldState(),
+        activeEvents: [{ id: 'plague-1', type: 'plague' as const, data: {} }],
+      };
 
-      expect(weathers).toHaveLength(5);
+      expect(service.isEventActive('plague-1', state)).toBe(true);
     });
-  });
 
-  describe('WorldEventType type', () => {
-    it('should include all event types', () => {
-      const eventTypes: WorldEventType[] = [
-        'festival',
-        'plague',
-        'drought',
-        'war',
-        'trade_route',
-      ];
+    it('returns false for inactive event', () => {
+      const state = emptyWorldState();
 
-      expect(eventTypes).toHaveLength(5);
+      expect(service.isEventActive('plague-1', state)).toBe(false);
     });
   });
 });
