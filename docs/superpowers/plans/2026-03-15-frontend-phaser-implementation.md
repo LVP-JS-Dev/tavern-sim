@@ -559,12 +559,9 @@ Expected: FAIL with "Cannot find module"
 ```typescript
 // src/frontend/bridge/StateBridge.ts
 import type { GameState, DomainEvent, StateBridge, BridgeConfig } from './types';
-import { SeededRng } from '../../core/rng';
+import { SeededRng } from '../../core/rng/service';
 import { createTickPipeline } from '../../domain/pipeline';
-import { createDirectorPlugin } from '../../domain/pipeline/plugins/director.plugin';
-import { createHeroesPlugin } from '../../domain/pipeline/plugins/heroes.plugin';
-import { createAdventuresPlugin } from '../../domain/pipeline/plugins/adventures.plugin';
-import { createWorldPlugin } from '../../domain/pipeline/plugins/world.plugin';
+import { directorPlugin, heroesPlugin, adventuresPlugin, worldPlugin } from '../../domain/pipeline/plugins';
 import type { Action } from '../../types/actions';
 
 interface Subscriber {
@@ -584,10 +581,10 @@ export function createStateBridge(config: BridgeConfig): StateBridge {
 
   // Build pipeline
   const pipeline = createTickPipeline([
-    createDirectorPlugin(),
-    createHeroesPlugin(),
-    createAdventuresPlugin(),
-    createWorldPlugin(),
+    directorPlugin,
+    heroesPlugin,
+    adventuresPlugin,
+    worldPlugin,
   ]);
 
   // Auto-save interval
@@ -896,8 +893,10 @@ import { createGame } from './game';
 import { createStateBridge, LocalStorageAdapter } from './bridge';
 import { createInitialState } from '../state/initial';
 import { migrateState } from '../state/migrations';
+import { calculateOfflineProgress } from '../time/offline';
 import { SCHEMA_VERSION } from '../types';
 import type { StateBridge } from './bridge';
+import type { GoldU } from '../types/state';
 
 // Global bridge instance
 let bridge: StateBridge | null = null;
@@ -917,6 +916,9 @@ export function initGame(): void {
   if (state) {
     // Migrate if needed
     state = migrateState(state, SCHEMA_VERSION);
+
+    // Apply offline progress
+    state = applyOfflineProgress(state);
   } else {
     state = createInitialState(Date.now(), Math.floor(Math.random() * 1000000));
   }
@@ -932,6 +934,35 @@ export function initGame(): void {
   createGame('game-container');
 
   console.log('[Frontend] Game initialized');
+}
+
+function applyOfflineProgress(state: any): any {
+  const now = Date.now();
+  const lastSeen = state.meta.lastSeenAtMs;
+
+  // Calculate total income from heroes
+  const incomePerSecondU = Object.values(state.heroes.roster).reduce(
+    (sum: number, hero: any) => sum + (hero.incomePerSecondU ?? 0),
+    0
+  ) as GoldU;
+
+  // Calculate offline earnings
+  const result = calculateOfflineProgress(now, lastSeen, incomePerSecondU);
+
+  if (result.goldEarned > 0) {
+    console.log(`[Frontend] Offline progress: +${result.goldEarned} gold`);
+
+    return {
+      ...state,
+      wallet: {
+        ...state.wallet,
+        gold: state.wallet.gold + result.goldEarned,
+        lifetimeEarnedGold: state.wallet.lifetimeEarnedGold + result.goldEarned,
+      },
+    };
+  }
+
+  return state;
 }
 
 // Auto-init when DOM is ready
