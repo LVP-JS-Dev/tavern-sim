@@ -1,8 +1,85 @@
-/**
- * Frontend Entry Point
- * This file will be the main entry point for the Phaser game.
- * Implementation will be added in subsequent chunks.
- */
+import { createGame } from './game';
+import { createStateBridge, LocalStorageAdapter } from './bridge';
+import { createInitialState } from '../state/initial';
+import { migrateState } from '../state/migrations';
+import { calculateOfflineProgress } from '../time/offline';
+import type { StateBridge } from './bridge';
+import type { GoldU } from '../types/state';
+import type { GameState } from '../types';
 
-// Placeholder for now - will be implemented in Chunk 3
-console.log('Tavern Tycoon - Phaser Frontend');
+// Global bridge instance
+let bridge: StateBridge | null = null;
+
+export function getBridge(): StateBridge {
+  if (!bridge) {
+    throw new Error('Bridge not initialized. Call initGame first.');
+  }
+  return bridge;
+}
+
+export function initGame(): void {
+  const storage = new LocalStorageAdapter('tavern-tycoon-save');
+
+  // Load or create initial state
+  let state: GameState;
+  const loadedState = storage.load();
+  if (loadedState) {
+    // Migrate if needed
+    const migrationResult = migrateState(loadedState as unknown as Record<string, unknown>);
+    if (migrationResult.error) {
+      console.error('[Frontend] Migration error:', migrationResult.error);
+    }
+    state = migrationResult.state;
+
+    // Apply offline progress
+    state = applyOfflineProgress(state);
+  } else {
+    state = createInitialState(Date.now(), Math.floor(Math.random() * 1000000));
+  }
+
+  // Create bridge
+  bridge = createStateBridge({
+    initialState: state,
+    storage,
+    autoSaveInterval: 5000,
+  });
+
+  // Create Phaser game
+  createGame('game-container');
+
+  console.log('[Frontend] Game initialized');
+}
+
+function applyOfflineProgress(state: any): any {
+  const now = Date.now();
+  const lastSeen = state.meta.lastSeenAtMs;
+
+  // Calculate total income from heroes
+  const incomePerSecondU = Object.values(state.heroes.roster).reduce(
+    (sum: number, hero: any) => sum + (hero.incomePerSecondU ?? 0),
+    0
+  ) as GoldU;
+
+  // Calculate offline earnings
+  const result = calculateOfflineProgress(now, lastSeen, incomePerSecondU);
+
+  if (result.goldEarned > 0) {
+    console.log(`[Frontend] Offline progress: +${result.goldEarned} gold`);
+
+    return {
+      ...state,
+      wallet: {
+        ...state.wallet,
+        gold: state.wallet.gold + result.goldEarned,
+        lifetimeEarnedGold: state.wallet.lifetimeEarnedGold + result.goldEarned,
+      },
+    };
+  }
+
+  return state;
+}
+
+// Auto-init when DOM is ready
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', initGame);
+}

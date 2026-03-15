@@ -1,5 +1,5 @@
 import type { GameState, DomainEvent, Action } from '../../types';
-import type { StateBridge, BridgeConfig, StorageAdapter } from './types';
+import type { StateBridge, BridgeConfig } from './types';
 import { reduce } from '../../reducer';
 import { tick } from '../../types/actions';
 
