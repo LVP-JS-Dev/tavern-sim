@@ -3,6 +3,7 @@ import { getBridge } from '../index';
 import { TICK_MS } from '../config';
 import { TavernRenderer } from '../renderer/TavernRenderer';
 import type { StateBridge } from '../bridge';
+import type { GameState } from '../../types';
 
 export class TavernScene extends Phaser.Scene {
   private bridge!: StateBridge;
@@ -30,7 +31,7 @@ export class TavernScene extends Phaser.Scene {
     this.syncState(this.bridge.getState());
   }
 
-  private syncState(_state: unknown): void {
+  private syncState(_state: GameState): void {
     // Will sync visitors and heroes in Chunk 5
   }
 

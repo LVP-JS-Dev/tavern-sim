@@ -3,6 +3,7 @@ import { LAYERS, TAVERN_AREA } from '../config';
 
 export class TavernRenderer {
   private scene: Phaser.Scene;
+  private floorGraphics: Phaser.GameObjects.Graphics | undefined;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -13,11 +14,10 @@ export class TavernRenderer {
   }
 
   private renderFloor(): void {
-    // Use a solid color as placeholder until floor texture is available
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(0x4a3728, 1);
-    graphics.fillRect(TAVERN_AREA.x, TAVERN_AREA.y, TAVERN_AREA.width, TAVERN_AREA.height);
-    graphics.setDepth(LAYERS.FLOOR);
+    this.floorGraphics = this.scene.add.graphics();
+    this.floorGraphics.fillStyle(0x4a3728, 1);
+    this.floorGraphics.fillRect(TAVERN_AREA.x, TAVERN_AREA.y, TAVERN_AREA.width, TAVERN_AREA.height);
+    this.floorGraphics.setDepth(LAYERS.FLOOR);
   }
 
   update(_time: number, _delta: number): void {
@@ -25,6 +25,7 @@ export class TavernRenderer {
   }
 
   destroy(): void {
-    // Cleanup
+    this.floorGraphics?.destroy();
+    this.floorGraphics = undefined;
   }
 }
