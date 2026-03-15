@@ -1,5 +1,9 @@
 # Tavern Tycoon Refactoring Implementation Plan
 
+> **STATUS: ✅ COMPLETED** (2026-03-15)
+>
+> All 12 chunks implemented and merged to `develop`. 438 tests passing.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Refactor fantasy-tavern-sim to support parallel development by implementing plugin architecture, decomposing handlers, and adding 5 new game systems (Director, Adventure, World, Event Log, Personality).
@@ -22,7 +26,7 @@ This is the foundation that all other systems depend on. Must be completed befor
 - Create: `src/core/rng/types.ts`
 - Create: `tests/unit/core/rng.test.ts`
 
-- [ ] **Step 1: Create test file with failing tests**
+- [x] **Step 1: Create test file with failing tests**
 
 ```typescript
 // tests/unit/core/rng.test.ts
@@ -194,12 +198,12 @@ describe('RngService', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/core/rng.test.ts`
 Expected: FAIL with "Cannot find module '../../../src/core/rng/service'"
 
-- [ ] **Step 3: Create RNG types**
+- [x] **Step 3: Create RNG types**
 
 ```typescript
 // src/core/rng/types.ts
@@ -251,7 +255,7 @@ export interface RngService {
 }
 ```
 
-- [ ] **Step 4: Create RNG service implementation**
+- [x] **Step 4: Create RNG service implementation**
 
 ```typescript
 // src/core/rng/service.ts
@@ -383,7 +387,7 @@ interface StreamState {
 }
 ```
 
-- [ ] **Step 5: Create RNG index export**
+- [x] **Step 5: Create RNG index export**
 
 ```typescript
 // src/core/rng/index.ts
@@ -391,12 +395,12 @@ export type { RngService, RngStream, RngSnapshot, StreamSnapshot } from './types
 export { SeededRng } from './service';
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run: `npx vitest run tests/unit/core/rng.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/core/rng tests/unit/core/rng.test.ts
@@ -411,7 +415,7 @@ git commit -m "feat(core): add RngService with seeded deterministic streams"
 - Create: `src/domain/pipeline/types.ts`
 - Create: `tests/unit/domain/pipeline/pipeline.test.ts`
 
-- [ ] **Step 1: Create test file with failing tests**
+- [x] **Step 1: Create test file with failing tests**
 
 ```typescript
 // tests/unit/domain/pipeline/pipeline.test.ts
@@ -578,12 +582,12 @@ describe('TickPipeline', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/domain/pipeline/pipeline.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create pipeline types**
+- [x] **Step 3: Create pipeline types**
 
 ```typescript
 // src/domain/pipeline/types.ts
@@ -632,7 +636,7 @@ export interface TickPipeline {
 }
 ```
 
-- [ ] **Step 4: Create pipeline implementation**
+- [x] **Step 4: Create pipeline implementation**
 
 ```typescript
 // src/domain/pipeline/pipeline.ts
@@ -669,7 +673,7 @@ export function createTickPipeline(plugins: TickPlugin[]): TickPipeline {
 }
 ```
 
-- [ ] **Step 5: Create pipeline index**
+- [x] **Step 5: Create pipeline index**
 
 ```typescript
 // src/domain/pipeline/index.ts
@@ -678,19 +682,19 @@ export { PLUGIN_ORDER } from './types';
 export { createTickPipeline } from './pipeline';
 ```
 
-- [ ] **Step 6: Create domain index**
+- [x] **Step 6: Create domain index**
 
 ```typescript
 // src/domain/index.ts
 export * from './pipeline';
 ```
 
-- [ ] **Step 7: Run tests to verify they pass**
+- [x] **Step 7: Run tests to verify they pass**
 
 Run: `npx vitest run tests/unit/domain/pipeline/pipeline.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/domain tests/unit/domain
@@ -706,7 +710,7 @@ git commit -m "feat(domain): add TickPipeline with plugin architecture"
 **Files:**
 - Modify: `src/types/state.ts`
 
-- [ ] **Step 1: Add DirectorState import and type to GameState**
+- [x] **Step 1: Add DirectorState import and type to GameState**
 
 First read the current state file to understand its structure:
 
@@ -742,7 +746,7 @@ export interface GameState {
 
 **Wait**: This will break existing code because the system types don't exist yet. We need to create stub types first.
 
-- [ ] **Step 2: Create stub system types to prevent breakage**
+- [x] **Step 2: Create stub system types to prevent breakage**
 
 Create minimal stub types that will be expanded later:
 
@@ -857,7 +861,7 @@ export const emptyPersonalityState = (): PersonalityState => ({
 });
 ```
 
-- [ ] **Step 3: Create system index files**
+- [x] **Step 3: Create system index files**
 
 ```typescript
 // src/systems/director/index.ts
@@ -898,7 +902,7 @@ export * from './event-log';
 export * from './personality';
 ```
 
-- [ ] **Step 4: Update state.ts with new imports**
+- [x] **Step 4: Update state.ts with new imports**
 
 Now update src/types/state.ts to include the new slices:
 
@@ -929,7 +933,7 @@ export interface GameState {
 }
 ```
 
-- [ ] **Step 5: Update initial state**
+- [x] **Step 5: Update initial state**
 
 Update src/state/initial.ts to include new slices:
 
@@ -959,12 +963,12 @@ export function createInitialState(now: number, rootSeed: number): GameState {
 }
 ```
 
-- [ ] **Step 6: Run all existing tests to verify nothing is broken**
+- [x] **Step 6: Run all existing tests to verify nothing is broken**
 
 Run: `npx vitest run`
 Expected: All existing tests PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/systems src/types/state.ts src/state/initial.ts
@@ -981,7 +985,7 @@ git commit -m "feat(types): add stub system types and extend GameState"
 - Modify: `src/systems/director/types.ts` (expand stub)
 - Create: `src/systems/director/constants.ts`
 
-- [ ] **Step 1: Write failing tests for DirectorService**
+- [x] **Step 1: Write failing tests for DirectorService**
 
 ```typescript
 // tests/unit/systems/director.test.ts
@@ -1098,12 +1102,12 @@ describe('DirectorSystem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/systems/director.test.ts`
 Expected: FAIL (service.ts doesn't exist yet)
 
-- [ ] **Step 3: Expand director types**
+- [x] **Step 3: Expand director types**
 
 ```typescript
 // src/systems/director/types.ts
@@ -1154,7 +1158,7 @@ export interface DirectorResult {
 }
 ```
 
-- [ ] **Step 4: Create director constants**
+- [x] **Step 4: Create director constants**
 
 ```typescript
 // src/systems/director/constants.ts
@@ -1171,7 +1175,7 @@ export const MAX_VISITORS = 10;
 export const SPAWN_TIMER_COOLDOWN = 3;
 ```
 
-- [ ] **Step 5: Create spawn.ts (pure functions)**
+- [x] **Step 5: Create spawn.ts (pure functions)**
 
 ```typescript
 // src/systems/director/spawn.ts
@@ -1220,7 +1224,7 @@ function pickVisitorType(rng: RngService, rosterSize: number): VisitorType {
 }
 ```
 
-- [ ] **Step 6: Create service.ts**
+- [x] **Step 6: Create service.ts**
 
 ```typescript
 // src/systems/director/service.ts
@@ -1273,7 +1277,7 @@ export class DirectorServiceImpl implements DirectorService {
 }
 ```
 
-- [ ] **Step 7: Update index.ts**
+- [x] **Step 7: Update index.ts**
 
 ```typescript
 // src/systems/director/index.ts
@@ -1292,19 +1296,19 @@ export { spawnVisitor } from './spawn';
 export { VISITOR_SPAWN_CHANCE, MAX_VISITOR_STAY_MS, MAX_VISITORS, SPAWN_TIMER_COOLDOWN } from './constants';
 ```
 
-- [ ] **Step 8: Run tests**
+- [x] **Step 8: Run tests**
 
 Run: `npx vitest run tests/unit/systems/director.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add src/systems/director tests/unit/systems/director.test.ts
 git commit -m "feat(systems): implement Director system with visitor spawning"
 ```
 
-- [ ] **Step 10: Write Director Plugin tests**
+- [x] **Step 10: Write Director Plugin tests**
 
 ```typescript
 // tests/unit/domain/pipeline/plugins/director.plugin.test.ts
@@ -1372,7 +1376,7 @@ describe('DirectorPlugin', () => {
 });
 ```
 
-- [ ] **Step 11: Create Director Plugin implementation**
+- [x] **Step 11: Create Director Plugin implementation**
 
 ```typescript
 // src/domain/pipeline/plugins/director.plugin.ts
@@ -1436,12 +1440,12 @@ export function createDirectorPlugin(): TickPlugin {
 }
 ```
 
-- [ ] **Step 12: Run Director Plugin tests**
+- [x] **Step 12: Run Director Plugin tests**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/director.plugin.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 13: Commit Director Plugin**
+- [x] **Step 13: Commit Director Plugin**
 
 ```bash
 git add src/domain/pipeline/plugins/director.plugin.ts tests/unit/domain/pipeline/plugins/director.plugin.test.ts
@@ -1468,7 +1472,7 @@ git commit -m "feat(pipeline): add Director plugin for visitor lifecycle"
 > - Modify: `src/state/initial.ts` (add emptyAdventureState)
 > - Create: `tests/unit/systems/adventure.test.ts`
 
-- [ ] **Step 1: Create test file with failing tests**
+- [x] **Step 1: Create test file with failing tests**
 
 ```typescript
 // tests/unit/systems/adventure.test.ts
@@ -1587,14 +1591,14 @@ describe('AdventureSystem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 ```bash
 npx vitest run tests/unit/systems/adventure.test.ts
 ```
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create adventure types and constants**
+- [x] **Step 3: Create adventure types and constants**
 
 ```typescript
 // src/systems/adventure/types.ts
@@ -1661,7 +1665,7 @@ export interface AdventureCompleteResult {
   readonly events: readonly import('../../types').DomainEvent[];
 }
 ```
-- [ ] **Step 4: Create constants**
+- [x] **Step 4: Create constants**
 
 ```typescript
 // src/systems/adventure/constants.ts
@@ -1692,7 +1696,7 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
   legendary: 1,
 };
 ```
-- [ ] **Step 5: Create index exports**
+- [x] **Step 5: Create index exports**
 
 ```typescript
 // src/systems/adventure/index.ts
@@ -1712,7 +1716,7 @@ export type {
 export { emptyAdventureState } from './types';
 export { ADVENTURE_BASE_DURATION_MS, MAX_ADVENTURES_ACTIVE } from './constants';
 ```
-- [ ] **Step 6: Extend GameState with AdventureState**
+- [x] **Step 6: Extend GameState with AdventureState**
 
 Add to `src/types/state.ts`:
 ```typescript
@@ -1736,14 +1740,14 @@ export function createInitialState(now: number, rootSeed: number): GameState {
   };
 }
 ```
-- [ ] **Step 7: Run tests to verify they still fail (service not implemented)**
+- [x] **Step 7: Run tests to verify they still fail (service not implemented)**
 
 ```bash
 npx vitest run tests/unit/systems/adventure.test.ts
 ```
 Expected: FAIL (service not implemented)
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/systems/adventure tests/unit/systems/adventure.test.ts
@@ -1765,7 +1769,7 @@ git commit -m "feat(systems): add Adventure types and constants"
 > - Commit
 
 ```
-- [ ] **Step 1: Create service implementation**
+- [x] **Step 1: Create service implementation**
 
 ```typescript
 // src/systems/adventure/service.ts
@@ -1866,7 +1870,7 @@ export class AdventureServiceImpl implements AdventureService {
   }
 }
 ```
-- [ ] **Step 2: Create loot generation module**
+- [x] **Step 2: Create loot generation module**
 
 ```typescript
 // src/systems/adventure/loot.ts
@@ -1911,7 +1915,7 @@ function rollRarity(stream: RngService, baseRarity: Rarity): Rarity {
   return baseRarity;
 }
 ```
-- [ ] **Step 3: Update index exports**
+- [x] **Step 3: Update index exports**
 
 ```typescript
 // src/systems/adventure/index.ts
@@ -1933,13 +1937,13 @@ export { ADVENTURE_BASE_DURATION_MS, MAX_ADVENTURES_ACTIVE } from './constants';
 export { AdventureServiceImpl } from './service';
 export { generateLoot } from './loot';
 ```
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 ```bash
 npx vitest run tests/unit/systems/adventure.test.ts
 ```
 Expected: All tests PASS
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/systems/adventure tests/unit/systems/adventure.test.ts
@@ -1954,7 +1958,7 @@ git commit -m "feat(systems): implement Adventure service with loot generation"
 - Create: `src/domain/pipeline/plugins/adventures.plugin.ts`
 - Create: `tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```typescript
 // tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts
@@ -2042,12 +2046,12 @@ describe('AdventuresPlugin', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create plugin implementation**
+- [x] **Step 3: Create plugin implementation**
 
 ```typescript
 // src/domain/pipeline/plugins/adventures.plugin.ts
@@ -2108,19 +2112,19 @@ export function createAdventuresPlugin(): TickPlugin {
 }
 ```
 
-- [ ] **Step 4: Update plugins index**
+- [x] **Step 4: Update plugins index**
 
 ```typescript
 // src/domain/pipeline/plugins/index.ts
 export { createAdventuresPlugin } from './adventures.plugin';
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/domain/pipeline/plugins tests/unit/domain/pipeline/plugins
@@ -2139,7 +2143,7 @@ git commit -m "feat(pipeline): add adventures plugin for tick processing"
 - Create: `src/systems/world/index.ts`
 - Create: `tests/unit/systems/world.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```typescript
 // tests/unit/systems/world.test.ts
@@ -2246,12 +2250,12 @@ describe('WorldSystem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/systems/world.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create world types**
+- [x] **Step 3: Create world types**
 
 ```typescript
 // src/systems/world/types.ts
@@ -2309,7 +2313,7 @@ export interface WorldService {
 }
 ```
 
-- [ ] **Step 4: Create world constants**
+- [x] **Step 4: Create world constants**
 
 ```typescript
 // src/systems/world/constants.ts
@@ -2343,7 +2347,7 @@ export const EVENT_MODIFIERS: Record<WorldEventType, { income: number; visitors:
 export const TOD_ORDER: TimeOfDay[] = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night', 'midnight'];
 ```
 
-- [ ] **Step 5: Create world service**
+- [x] **Step 5: Create world service**
 
 ```typescript
 // src/systems/world/service.ts
@@ -2416,7 +2420,7 @@ export class WorldServiceImpl implements WorldService {
 }
 ```
 
-- [ ] **Step 6: Create world index**
+- [x] **Step 6: Create world index**
 
 ```typescript
 // src/systems/world/index.ts
@@ -2437,19 +2441,19 @@ export { WorldServiceImpl } from './service';
 export { TICKS_PER_TOD, WEATHER_MODIFIERS, EVENT_MODIFIERS } from './constants';
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 Run: `npx vitest run tests/unit/systems/world.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/systems/world tests/unit/systems/world.test.ts
 git commit -m "feat(systems): implement World system with time and weather"
 ```
 
-- [ ] **Step 9: Write World Plugin tests**
+- [x] **Step 9: Write World Plugin tests**
 
 ```typescript
 // tests/unit/domain/pipeline/plugins/world.plugin.test.ts
@@ -2509,7 +2513,7 @@ describe('WorldPlugin', () => {
 });
 ```
 
-- [ ] **Step 10: Create World Plugin implementation**
+- [x] **Step 10: Create World Plugin implementation**
 
 ```typescript
 // src/domain/pipeline/plugins/world.plugin.ts
@@ -2541,12 +2545,12 @@ export function createWorldPlugin(): TickPlugin {
 }
 ```
 
-- [ ] **Step 11: Run World Plugin tests**
+- [x] **Step 11: Run World Plugin tests**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/world.plugin.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 12: Commit World Plugin**
+- [x] **Step 12: Commit World Plugin**
 
 ```bash
 git add src/domain/pipeline/plugins/world.plugin.ts tests/unit/domain/pipeline/plugins/world.plugin.test.ts
@@ -2564,7 +2568,7 @@ git commit -m "feat(pipeline): add World plugin for time and weather updates"
 - Create: `src/systems/event-log/index.ts`
 - Create: `tests/unit/systems/event-log.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```typescript
 // tests/unit/systems/event-log.test.ts
@@ -2693,12 +2697,12 @@ describe('EventLogSystem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/systems/event-log.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create event-log types**
+- [x] **Step 3: Create event-log types**
 
 ```typescript
 // src/systems/event-log/types.ts
@@ -2757,7 +2761,7 @@ export interface EventLogService {
 }
 ```
 
-- [ ] **Step 4: Create event-log service**
+- [x] **Step 4: Create event-log service**
 
 ```typescript
 // src/systems/event-log/service.ts
@@ -2826,7 +2830,7 @@ export class EventLogServiceImpl implements EventLogService {
 }
 ```
 
-- [ ] **Step 5: Create event-log index**
+- [x] **Step 5: Create event-log index**
 
 ```typescript
 // src/systems/event-log/index.ts
@@ -2843,12 +2847,12 @@ export { emptyEventLogState } from './types';
 export { EventLogServiceImpl } from './service';
 ```
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run: `npx vitest run tests/unit/systems/event-log.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/systems/event-log tests/unit/systems/event-log.test.ts
@@ -2867,7 +2871,7 @@ git commit -m "feat(systems): implement Event Log system with notifications"
 - Create: `src/systems/personality/index.ts`
 - Create: `tests/unit/systems/personality.test.ts`
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 ```typescript
 // tests/unit/systems/personality.test.ts
@@ -3009,12 +3013,12 @@ describe('PersonalitySystem', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/systems/personality.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 3: Create personality types**
+- [x] **Step 3: Create personality types**
 
 ```typescript
 // src/systems/personality/types.ts
@@ -3065,7 +3069,7 @@ export interface PersonalityService {
 }
 ```
 
-- [ ] **Step 4: Create traits definitions**
+- [x] **Step 4: Create traits definitions**
 
 ```typescript
 // src/systems/personality/traits.ts
@@ -3131,7 +3135,7 @@ export const ALL_TRAITS: readonly Trait[] = [
 export const MAX_TRAITS_PER_HERO = 4;
 ```
 
-- [ ] **Step 5: Create personality service**
+- [x] **Step 5: Create personality service**
 
 ```typescript
 // src/systems/personality/service.ts
@@ -3214,7 +3218,7 @@ export class PersonalityServiceImpl implements PersonalityService {
 }
 ```
 
-- [ ] **Step 6: Create personality index**
+- [x] **Step 6: Create personality index**
 
 ```typescript
 // src/systems/personality/index.ts
@@ -3232,12 +3236,12 @@ export { PersonalityServiceImpl } from './service';
 export { ALL_TRAITS, MAX_TRAITS_PER_HERO } from './traits';
 ```
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 Run: `npx vitest run tests/unit/systems/personality.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/systems/personality tests/unit/systems/personality.test.ts
@@ -3255,11 +3259,11 @@ git commit -m "feat(systems): implement Personality system with traits"
 - Create: `src/domain/pipeline/plugins/heroes.plugin.ts`
 - Create: `tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
 
-- [ ] **Step 1: Read existing tick.ts to understand hero processing**
+- [x] **Step 1: Read existing tick.ts to understand hero processing**
 
 Read: `src/time/tick.ts` - Identify hero-related logic (income, upgrades, etc.)
 
-- [ ] **Step 2: Write failing tests for Heroes Plugin**
+- [x] **Step 2: Write failing tests for Heroes Plugin**
 
 ```typescript
 // tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts
@@ -3363,12 +3367,12 @@ describe('HeroesPlugin', () => {
 });
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
 Expected: FAIL with "Cannot find module"
 
-- [ ] **Step 4: Create Heroes Plugin implementation**
+- [x] **Step 4: Create Heroes Plugin implementation**
 
 ```typescript
 // src/domain/pipeline/plugins/heroes.plugin.ts
@@ -3422,12 +3426,12 @@ export function createHeroesPlugin(): TickPlugin {
 }
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `npx vitest run tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
 Expected: All tests PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/domain/pipeline/plugins/heroes.plugin.ts tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts
@@ -3448,7 +3452,7 @@ git commit -m "feat(pipeline): add Heroes plugin for income processing"
 - Create: `src/state/migrations.ts` (add v0.1.0 → v0.2.0 migration)
 - Create: `tests/integration/tick-pipeline.test.ts`
 
-- [ ] **Step 1: Write integration test**
+- [x] **Step 1: Write integration test**
 
 ```typescript
 // tests/integration/tick-pipeline.test.ts
@@ -3530,12 +3534,12 @@ describe('Tick Pipeline Integration', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/integration/tick-pipeline.test.ts`
 Expected: FAIL (plugins not yet integrated)
 
-- [ ] **Step 3: Create tick.handler.ts**
+- [x] **Step 3: Create tick.handler.ts**
 
 ```typescript
 // src/domain/handlers/tick.handler.ts
@@ -3585,7 +3589,7 @@ export function handleTick(
 }
 ```
 
-- [ ] **Step 4: Create state migration**
+- [x] **Step 4: Create state migration**
 
 ```typescript
 // src/state/migrations.ts
@@ -3638,7 +3642,7 @@ export function migrateState(state: unknown, targetVersion: string): GameState {
 }
 ```
 
-- [ ] **Step 5: Update handlers.ts to use new tick handler**
+- [x] **Step 5: Update handlers.ts to use new tick handler**
 
 Read the current handlers.ts to understand its structure, then refactor:
 
@@ -3654,12 +3658,12 @@ case 'TICK': {
 }
 ```
 
-- [ ] **Step 6: Run all tests**
+- [x] **Step 6: Run all tests**
 
 Run: `npx vitest run`
 Expected: All tests PASS (existing + new)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/domain/handlers src/state/migrations.ts src/reducer/handlers.ts tests/integration
@@ -3677,7 +3681,7 @@ git commit -m "feat: integrate tick pipeline with all systems and add state migr
 - Modify: `src/cli/display.ts`
 - Create: `tests/unit/cli/commands.test.ts`
 
-- [ ] **Step 1: Write failing tests for new commands**
+- [x] **Step 1: Write failing tests for new commands**
 
 ```typescript
 // tests/unit/cli/commands.test.ts
@@ -3756,12 +3760,12 @@ describe('CLI Commands - New Commands', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/unit/cli/commands.test.ts`
 Expected: FAIL with "LOG" not recognized
 
-- [ ] **Step 3: Update commands.ts with new command types**
+- [x] **Step 3: Update commands.ts with new command types**
 
 ```typescript
 // Add to src/cli/commands.ts
@@ -3801,7 +3805,7 @@ export interface EventFilter {
 // Add cases for 'log', 'events', 'notifications', 'mark-read', 'world'
 ```
 
-- [ ] **Step 4: Update CLI index.ts with new command handlers**
+- [x] **Step 4: Update CLI index.ts with new command handlers**
 
 ```typescript
 // Add to src/cli/index.ts
@@ -3840,7 +3844,7 @@ case 'WORLD': {
 }
 ```
 
-- [ ] **Step 5: Add display formatters**
+- [x] **Step 5: Add display formatters**
 
 ```typescript
 // Add to src/cli/display.ts
@@ -3883,12 +3887,12 @@ displayWorldState(world: WorldState): void {
 }
 ```
 
-- [ ] **Step 6: Run all tests**
+- [x] **Step 6: Run all tests**
 
 Run: `npx vitest run`
 Expected: All tests PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/cli tests/unit/cli
@@ -3906,7 +3910,7 @@ git commit -m "feat(cli): add log, events, notifications, world commands"
 - Create: `tests/integration/full-game-loop.test.ts`
 - Create: `tests/integration/save-load-migration.test.ts`
 
-- [ ] **Step 1: Write full game loop integration test**
+- [x] **Step 1: Write full game loop integration test**
 
 ```typescript
 // tests/integration/full-game-loop.test.ts
@@ -3988,7 +3992,7 @@ describe('Full Game Loop Integration', () => {
 });
 ```
 
-- [ ] **Step 2: Write save/load migration test**
+- [x] **Step 2: Write save/load migration test**
 
 ```typescript
 // tests/integration/save-load-migration.test.ts
@@ -4042,24 +4046,24 @@ describe('State Migration', () => {
 });
 ```
 
-- [ ] **Step 3: Run all tests**
+- [x] **Step 3: Run all tests**
 
 Run: `npx vitest run`
 Expected: All tests PASS
 
-- [ ] **Step 4: Run full test suite with coverage**
+- [x] **Step 4: Run full test suite with coverage**
 
 Run: `npx vitest run --coverage`
 Expected: 90%+ coverage on new systems
 
-- [ ] **Step 5: Final commit**
+- [x] **Step 5: Final commit**
 
 ```bash
 git add tests/integration
 git commit -m "test: add comprehensive integration tests for full game loop"
 ```
 
-- [ ] **Step 6: Create summary**
+- [x] **Step 6: Create summary**
 
 The implementation is complete. Summary of changes:
 
