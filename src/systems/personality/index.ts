@@ -1,13 +1,13 @@
-/**
- * Personality System
- *
- * Manages hero personality traits and corruption.
- * Will be expanded in Chunk 9.
- */
+// src/systems/personality/index.ts
 export type {
-  Trait,
-  TraitType,
+  PersonalityService,
   PersonalityState,
   PersonalitySlice,
+  Trait,
+  TraitEffect,
+  TraitType,
+  TraitEffectsResult,
 } from './types';
 export { emptyPersonalityState, emptyPersonalitySlice } from './types';
+export { PersonalityServiceImpl } from './service';
+export { ALL_TRAITS, MAX_TRAITS_PER_HERO } from './traits';

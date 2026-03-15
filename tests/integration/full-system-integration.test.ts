@@ -23,7 +23,7 @@ describe('Full System Integration', () => {
       expect(state.adventures.adventures).toEqual([]);
       expect(state.world.dayNumber).toBe(1);
       expect(state.eventLog.entries).toEqual([]);
-      expect(Object.keys(state.personality.heroes)).toHaveLength(0);
+      expect(Object.keys(state.personality.heroPersonalities)).toHaveLength(0);
     });
   });
 
