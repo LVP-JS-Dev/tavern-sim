@@ -27,7 +27,10 @@
       "Bash(gh pr:*)",
       "Bash(find docs/superpowers -name \"*.md\" 2>/dev/null | head -20)",
       "Bash(grep -rn \"TODO\\\\|FIXME\\\\|XXX\\\\|HACK\" src/ --include=\"*.ts\" 2>/dev/null | head -20)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(echo \"=== Merging remaining PRs ===\" && for pr in 12 13 15 16; do echo \"PR #$pr:\" && gh pr merge $pr --merge --delete-branch && echo \"✅ Merged\" && echo \"\" || echo \"❌ Failed\" && echo \"\"; done)",
+      "Bash(npx tsc:*)",
+      "Bash(echo -e \"status\\\\nexit\" | npx ts-node src/cli/index.ts 2>&1 | head -30)"
     ]
   }
 }

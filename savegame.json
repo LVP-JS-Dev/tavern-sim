@@ -1,0 +1,30 @@
+{
+  "heroes": {
+    "order": [
+      "barkeep"
+    ],
+    "roster": {
+      "barkeep": {
+        "incomePerSecondU": 1000,
+        "level": 1
+      }
+    }
+  },
+  "meta": {
+    "createdAtMs": 1773481721597,
+    "lastSeenAtMs": 1773481742304,
+    "rootSeed": 122055,
+    "version": "0.1.0"
+  },
+  "tavern": {
+    "level": 1,
+    "upgrades": {}
+  },
+  "time": {
+    "lastTickAtMs": 1773481742304
+  },
+  "wallet": {
+    "gold": 20000,
+    "lifetimeEarnedGold": 30000
+  }
+}

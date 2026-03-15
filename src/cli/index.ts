@@ -10,7 +10,8 @@
 import * as readline from "readline";
 import { createInitialState } from "../state/initial";
 import { reduce } from "../reducer";
-import { createFileStorage, type Storage } from "../persistence/file";
+import { createFileStorage } from "../persistence/file";
+import type { Storage } from "../persistence/storage";
 import { TICK_MS } from "../config/balance";
 import type { GameState, DomainEvent } from "../types";
 import {
@@ -29,6 +30,9 @@ import {
   isExitCommand,
   isEmptyCommand,
   isUnknownCommand,
+  isAdventuresCommand,
+  isVisitorsCommand,
+  isStartAdventureCommand,
   type ParsedCommand,
 } from "./commands";
 import {
@@ -190,6 +194,60 @@ function handleUpgrade(state: CliState, command: ParsedCommand): string {
  */
 function handleHeroes(state: CliState): string {
   return formatHeroList(state.gameState);
+}
+
+/**
+ * Handles the adventures command.
+ *
+ * @param state - CLI state
+ * @returns Formatted output string
+ */
+function handleAdventures(state: CliState): string {
+  const adventures = state.gameState.adventures?.adventures ?? [];
+  if (adventures.length === 0) {
+    return "📋 No active adventures.";
+  }
+
+  const lines = ["📋 Active Adventures:", ""];
+  for (const adv of adventures) {
+    const progress = Math.round(adv.progress * 100);
+    const status = adv.status === 'completed' ? '✅' : adv.status === 'in_progress' ? '🔄' : '⏳';
+    lines.push(`  ${status} ${adv.id}: ${adv.type} (${progress}%) - Heroes: ${adv.heroIds.join(', ')}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Handles the visitors command.
+ *
+ * @param state - CLI state
+ * @returns Formatted output string
+ */
+function handleVisitors(state: CliState): string {
+  const visitors = state.gameState.director?.visitors ?? [];
+  if (visitors.length === 0) {
+    return "👥 No visitors in the tavern.";
+  }
+
+  const lines = ["👥 Current Visitors:", ""];
+  for (const visitor of visitors) {
+    const typeEmoji = visitor.type === 'noble' ? '👑' : visitor.type === 'merchant' ? '💰' : visitor.type === 'adventurer' ? '⚔️' : '🍺';
+    lines.push(`  ${typeEmoji} ${visitor.id}: ${visitor.type}`);
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Handles the start-adventure command.
+ *
+ * @param state - CLI state
+ * @param command - Start adventure command
+ * @returns Formatted output string
+ */
+function handleStartAdventure(state: CliState, command: { adventureType: string; heroIds: readonly string[] }): string {
+  // For now, just acknowledge the command
+  // Full implementation would use the adventure service
+  return `⚔️ Starting ${command.adventureType} adventure with heroes: ${command.heroIds.join(', ')}`;
 }
 
 /**
@@ -395,6 +453,21 @@ async function processCommand(state: CliState, input: string): Promise<string | 
   // Exit
   if (isExitCommand(command)) {
     return handleExit(state);
+  }
+
+  // Adventures - list active adventures
+  if (isAdventuresCommand(command)) {
+    return handleAdventures(state);
+  }
+
+  // Visitors - list current visitors
+  if (isVisitorsCommand(command)) {
+    return handleVisitors(state);
+  }
+
+  // Start Adventure - begin a new adventure
+  if (isStartAdventureCommand(command)) {
+    return handleStartAdventure(state, command);
   }
 
   // This should never happen with TypeScript exhaustiveness checking

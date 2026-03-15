@@ -81,10 +81,61 @@ type MigrationFn = (state: Record<string, unknown>) => Record<string, unknown>;
  * The migrateState function will chain migrations if needed.
  */
 const MIGRATIONS: Record<VersionString, { toVersion: VersionString; migrate: MigrationFn }> = {
-  // No migrations yet - this is the first version (0.1.0)
-  // Future migrations will be added here:
-  // "0.1.0": { toVersion: "0.2.0", migrate: migrateV010ToV020 },
+  // Migration from v0.1.0 to v0.2.0 - adds new game systems
+  "0.1.0": {
+    toVersion: "0.2.0",
+    migrate: migrateV010ToV020,
+  },
 };
+
+// ============================================================================
+// MIGRATION IMPLEMENTATIONS
+// ============================================================================
+
+/**
+ * Migrates state from v0.1.0 to v0.2.0.
+ *
+ * Adds the following new slices:
+ * - director: Visitor spawning system
+ * - adventures: Adventure tracking system
+ * - world: World state (time, weather)
+ * - eventLog: Event history and notifications
+ * - personality: Hero personality traits
+ */
+function migrateV010ToV020(state: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...state,
+    meta: {
+      ...(state.meta as Record<string, unknown>),
+      version: "0.2.0",
+    },
+    // Add new system slices with empty initial states
+    director: {
+      visitors: [],
+      spawnTimer: 0,
+      nextVisitorId: 1,
+    },
+    adventures: {
+      adventures: [],
+      nextAdventureId: 1,
+    },
+    world: {
+      timeOfDay: "dawn",
+      weather: "clear",
+      dayNumber: 1,
+      activeEvents: [],
+    },
+    eventLog: {
+      entries: [],
+      notifications: [],
+      lastReadAt: 0,
+      maxEntries: 100,
+    },
+    personality: {
+      heroPersonalities: {},
+    },
+  };
+}
 
 // ============================================================================
 // VERSION UTILITIES
