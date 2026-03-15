@@ -22,6 +22,9 @@ export function createStateBridge(config: BridgeConfig): StateBridge {
   // Current game state
   let state: GameState = initialState;
 
+  // Action queue for next tick cycle
+  let actionQueue: Action[] = [];
+
   // Subscribers for state changes
   const stateSubscribers: Set<(state: GameState) => void> = new Set();
 
@@ -96,17 +99,7 @@ export function createStateBridge(config: BridgeConfig): StateBridge {
     },
 
     dispatch(action: Action): void {
-      const now = Date.now();
-      const result = reduce(state, action, now);
-
-      // Update state
-      state = result.state;
-
-      // Notify subscribers
-      notifyStateSubscribers();
-
-      // Emit events
-      notifyEventSubscribers(result.events);
+      actionQueue.push(action);
     },
 
     getState(): GameState {
@@ -115,16 +108,35 @@ export function createStateBridge(config: BridgeConfig): StateBridge {
 
     tick(): void {
       const now = Date.now();
-      const result = reduce(state, tick(), now);
+      let currentState = state;
+      const allEvents: DomainEvent[] = [];
 
-      // Update state
-      state = result.state;
+      // Process queued actions first
+      while (actionQueue.length > 0) {
+        const action = actionQueue.shift()!;
+        const result = reduce(currentState, action, now);
+        currentState = result.state;
+        allEvents.push(...result.events);
+      }
+
+      // Then process TICK
+      const tickResult = reduce(currentState, tick(), now);
+      state = tickResult.state;
+      allEvents.push(...tickResult.events);
 
       // Notify subscribers
       notifyStateSubscribers();
+      notifyEventSubscribers(allEvents);
+    },
 
-      // Emit events
-      notifyEventSubscribers(result.events);
+    destroy(): void {
+      if (autoSaveTimer !== null) {
+        clearInterval(autoSaveTimer);
+        autoSaveTimer = null;
+      }
+      stateSubscribers.clear();
+      eventSubscribers.clear();
+      actionQueue = [];
     },
   };
 }

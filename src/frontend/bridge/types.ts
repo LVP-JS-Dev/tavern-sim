@@ -11,7 +11,7 @@ export interface StateBridge {
   /** Subscribe to domain events (for toasts, VFX triggers). */
   subscribeToEvents(fn: (event: DomainEvent) => void): () => void;
 
-  /** Dispatch user action to be processed immediately. */
+  /** Dispatch user action (queued for next tick cycle). */
   dispatch(action: Action): void;
 
   /** Get current state snapshot. */
@@ -19,6 +19,9 @@ export interface StateBridge {
 
   /** Force advance simulation by one tick. */
   tick(): void;
+
+  /** Cleanup resources */
+  destroy(): void;
 }
 
 /**

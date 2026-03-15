@@ -182,7 +182,7 @@ describe('StateBridge', () => {
   });
 
   describe('dispatch', () => {
-    it('processes actions and updates state', () => {
+    it('queues actions for next tick cycle', () => {
       // Create state with a hero in the roster
       const stateWithHero: GameState = {
         ...initialState,
@@ -213,8 +213,16 @@ describe('StateBridge', () => {
       const action = upgradeHero('barkeep', 1);
       bridge.dispatch(action);
 
+      // Action is queued, not processed immediately
+      expect(subscriber).not.toHaveBeenCalled();
+      let newState = bridge.getState();
+      expect(newState.heroes.roster['barkeep'].level).toBe(1);
+
+      // Tick processes queued actions
+      bridge.tick();
+
       expect(subscriber).toHaveBeenCalled();
-      const newState = bridge.getState();
+      newState = bridge.getState();
       expect(newState.heroes.roster['barkeep'].level).toBe(2);
     });
   });
