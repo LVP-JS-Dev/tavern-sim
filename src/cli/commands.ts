@@ -137,6 +137,55 @@ export interface VisitorsCommand extends ParsedCommandBase {
 }
 
 /**
+ * Log command - query event log with optional filters.
+ */
+export interface LogCommand extends ParsedCommandBase {
+  readonly type: "LOG";
+  readonly filter?: EventFilter;
+}
+
+/**
+ * Events command - show recent domain events.
+ */
+export interface EventsCommand extends ParsedCommandBase {
+  readonly type: "EVENTS";
+  readonly limit?: number;
+}
+
+/**
+ * Notifications command - show notifications.
+ */
+export interface NotificationsCommand extends ParsedCommandBase {
+  readonly type: "NOTIFICATIONS";
+  readonly showRead: boolean;
+}
+
+/**
+ * Mark Read command - mark notifications as read.
+ */
+export interface MarkReadCommand extends ParsedCommandBase {
+  readonly type: "MARK_READ";
+  readonly ids: readonly string[];
+}
+
+/**
+ * World command - display world state.
+ */
+export interface WorldCommand extends ParsedCommandBase {
+  readonly type: "WORLD";
+}
+
+/**
+ * Event filter for log command.
+ */
+export interface EventFilter {
+  readonly since?: number;
+  readonly until?: number;
+  readonly types?: readonly string[];
+  readonly limit?: number;
+}
+
+/**
  * Unknown command - parsing failed.
  */
 export interface UnknownCommand extends ParsedCommandBase {
@@ -170,6 +219,11 @@ export type ParsedCommand =
   | AdventuresCommand
   | StartAdventureCommand
   | VisitorsCommand
+  | LogCommand
+  | EventsCommand
+  | NotificationsCommand
+  | MarkReadCommand
+  | WorldCommand
   | UnknownCommand
   | EmptyCommand;
 
@@ -361,6 +415,34 @@ export function parseCommand(input: string): ParsedCommand {
       }
       return { type: "VISITORS", raw: input };
 
+    case "log":
+    case "l":
+      return parseLogCommand(input, args);
+
+    case "events":
+    case "e":
+      return parseEventsCommand(input, args);
+
+    case "notifications":
+    case "notif":
+    case "n":
+      return parseNotificationsCommand(input, args);
+
+    case "mark-read":
+    case "mr":
+      return parseMarkReadCommand(input, args);
+
+    case "world":
+    case "w":
+      if (args.length > 0) {
+        return {
+          type: "UNKNOWN",
+          raw: input,
+          error: `Command 'world' takes no arguments. Got: ${args.join(" ")}`,
+        };
+      }
+      return { type: "WORLD", raw: input };
+
     default:
       return {
         type: "UNKNOWN",
@@ -523,6 +605,105 @@ function parseStartAdventureCommand(input: string, args: string[]): StartAdventu
     heroIds,
     raw: input,
   };
+}
+
+/**
+ * Parse log command arguments.
+ */
+function parseLogCommand(input: string, args: string[]): LogCommand | UnknownCommand {
+  const filter: EventFilter = {};
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '--type' && i + 1 < args.length) {
+      // Support multiple --type flags
+      filter.types = filter.types || [];
+      filter.types = [...filter.types, args[++i]];
+    } else if (arg === '--limit' && i + 1 < args.length) {
+      const limit = parsePositiveInt(args[++i]);
+      if (limit === null) {
+        return {
+          type: "UNKNOWN",
+          raw: input,
+          error: `Invalid limit value: '${args[i]}'. Must be a positive integer.`,
+        };
+      }
+      filter.limit = limit;
+    } else {
+      return {
+        type: "UNKNOWN",
+        raw: input,
+        error: `Unknown argument: '${arg}'. Usage: log [--type <type>] [--limit <n>]`,
+      };
+    }
+  }
+
+  return { type: "LOG", filter: Object.keys(filter).length > 0 ? filter : undefined, raw: input };
+}
+
+/**
+ * Parse events command arguments.
+ */
+function parseEventsCommand(input: string, args: string[]): EventsCommand | UnknownCommand {
+  if (args.length === 0) {
+    return { type: "EVENTS", raw: input };
+  }
+
+  if (args.length > 1) {
+    return {
+      type: "UNKNOWN",
+      raw: input,
+      error: `Command 'events' takes at most one argument (limit). Got: ${args.join(" ")}`,
+    };
+  }
+
+  const limit = parsePositiveInt(args[0]);
+  if (limit === null) {
+    return {
+      type: "UNKNOWN",
+      raw: input,
+      error: `Invalid limit: '${args[0]}'. Must be a positive integer.`,
+    };
+  }
+
+  return { type: "EVENTS", limit, raw: input };
+}
+
+/**
+ * Parse notifications command arguments.
+ */
+function parseNotificationsCommand(input: string, args: string[]): NotificationsCommand | UnknownCommand {
+  let showRead = false;
+
+  for (const arg of args) {
+    if (arg === '--all') {
+      showRead = true;
+    } else {
+      return {
+        type: "UNKNOWN",
+        raw: input,
+        error: `Unknown argument: '${arg}'. Usage: notifications [--all]`,
+      };
+    }
+  }
+
+  return { type: "NOTIFICATIONS", showRead, raw: input };
+}
+
+/**
+ * Parse mark-read command arguments.
+ */
+function parseMarkReadCommand(input: string, args: string[]): MarkReadCommand | UnknownCommand {
+  if (args.length === 0) {
+    return {
+      type: "UNKNOWN",
+      raw: input,
+      error: "Command 'mark-read' requires at least one notification ID. Usage: mark-read <id> [id...]",
+    };
+  }
+
+  return { type: "MARK_READ", ids: args, raw: input };
 }
 
 // ============================================================================
@@ -693,4 +874,39 @@ export function isStartAdventureCommand(cmd: ParsedCommand): cmd is StartAdventu
  */
 export function isVisitorsCommand(cmd: ParsedCommand): cmd is VisitorsCommand {
   return cmd.type === "VISITORS";
+}
+
+/**
+ * Type guard to check if a command is a LogCommand.
+ */
+export function isLogCommand(cmd: ParsedCommand): cmd is LogCommand {
+  return cmd.type === "LOG";
+}
+
+/**
+ * Type guard to check if a command is an EventsCommand.
+ */
+export function isEventsCommand(cmd: ParsedCommand): cmd is EventsCommand {
+  return cmd.type === "EVENTS";
+}
+
+/**
+ * Type guard to check if a command is a NotificationsCommand.
+ */
+export function isNotificationsCommand(cmd: ParsedCommand): cmd is NotificationsCommand {
+  return cmd.type === "NOTIFICATIONS";
+}
+
+/**
+ * Type guard to check if a command is a MarkReadCommand.
+ */
+export function isMarkReadCommand(cmd: ParsedCommand): cmd is MarkReadCommand {
+  return cmd.type === "MARK_READ";
+}
+
+/**
+ * Type guard to check if a command is a WorldCommand.
+ */
+export function isWorldCommand(cmd: ParsedCommand): cmd is WorldCommand {
+  return cmd.type === "WORLD";
 }

@@ -1304,6 +1304,150 @@ git add src/systems/director tests/unit/systems/director.test.ts
 git commit -m "feat(systems): implement Director system with visitor spawning"
 ```
 
+- [ ] **Step 10: Write Director Plugin tests**
+
+```typescript
+// tests/unit/domain/pipeline/plugins/director.plugin.test.ts
+import { describe, it, expect } from 'vitest';
+import { createDirectorPlugin } from '../../../../../src/domain/pipeline/plugins/director.plugin';
+import type { TickContext } from '../../../../../src/domain/pipeline/types';
+import { SeededRng } from '../../../../../src/core/rng';
+import { createInitialState } from '../../../../../src/state/initial';
+
+describe('DirectorPlugin', () => {
+  it('spawns visitors when conditions are met', () => {
+    const plugin = createDirectorPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    const ctx: TickContext = {
+      state,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    // May or may not spawn depending on RNG, but should not error
+    expect(result.state.director).toBeDefined();
+    expect(result.events).toBeDefined();
+  });
+
+  it('processes visitor departures', () => {
+    const plugin = createDirectorPlugin();
+    const now = Date.now();
+    const state = createInitialState(now, 12345);
+
+    // Add an old visitor
+    const stateWithOldVisitor = {
+      ...state,
+      director: {
+        ...state.director,
+        visitors: [{
+          id: 'old-visitor',
+          type: 'patron' as const,
+          arrivedAt: now - (10 * 60 * 1000), // 10 minutes ago
+        }],
+        nextVisitorId: 2,
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithOldVisitor,
+      rng: new SeededRng(12345),
+      now,
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    expect(result.state.director.visitors.find(v => v.id === 'old-visitor')).toBeUndefined();
+  });
+
+  it('has correct plugin order', () => {
+    const plugin = createDirectorPlugin();
+
+    expect(plugin.order).toBe(300); // PLUGIN_ORDER.DIRECTOR
+  });
+});
+```
+
+- [ ] **Step 11: Create Director Plugin implementation**
+
+```typescript
+// src/domain/pipeline/plugins/director.plugin.ts
+import type { TickPlugin, TickContext, TickResult } from '../types';
+import { PLUGIN_ORDER } from '../types';
+import { DirectorServiceImpl } from '../../../systems/director';
+import type { DomainEvent } from '../../../types';
+
+export function createDirectorPlugin(): TickPlugin {
+  const service = new DirectorServiceImpl();
+
+  return {
+    name: 'director',
+    order: PLUGIN_ORDER.DIRECTOR,
+
+    process(ctx: TickContext): TickResult {
+      const directorResult = service.update({
+        state: ctx.state,
+        rng: ctx.rng,
+        now: ctx.now,
+      });
+
+      const events: DomainEvent[] = [];
+      let newState = ctx.state;
+
+      // Add spawn events
+      for (const visitor of directorResult.visitorsSpawned) {
+        events.push({
+          type: 'VISITOR_ARRIVED',
+          visitorId: visitor.id,
+          visitorType: visitor.type,
+          timestamp: ctx.now,
+        });
+      }
+
+      // Add departure events
+      for (const visitorId of directorResult.visitorsDeparted) {
+        events.push({
+          type: 'VISITOR_DEPARTED',
+          visitorId,
+          timestamp: ctx.now,
+        });
+      }
+
+      // Update state
+      newState = {
+        ...newState,
+        director: {
+          ...newState.director,
+          visitors: [
+            ...newState.director.visitors.filter(v => !directorResult.visitorsDeparted.includes(v.id)),
+            ...directorResult.visitorsSpawned,
+          ],
+          nextVisitorId: newState.director.nextVisitorId + directorResult.visitorsSpawned.length,
+        },
+      };
+
+      return { state: newState, events };
+    },
+  };
+}
+```
+
+- [ ] **Step 12: Run Director Plugin tests**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/director.plugin.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 13: Commit Director Plugin**
+
+```bash
+git add src/domain/pipeline/plugins/director.plugin.ts tests/unit/domain/pipeline/plugins/director.plugin.test.ts
+git commit -m "feat(pipeline): add Director plugin for visitor lifecycle"
+```
+
 ---
 
 ## Chunk 4: Adventure System - Types
@@ -1772,17 +1916,17 @@ function rollRarity(stream: RngService, baseRarity: Rarity): Rarity {
 ```typescript
 // src/systems/adventure/index.ts
 export type {
-  AdventureService
-  AdventureContext
-  AdventureState
-  Adventure
-  AdventureType
-  AdventureStatus
-  LootDrop
-  Rarity
-  AdventureCreateResult
-  AdventureUpdateResult
-  AdventureCompleteResult
+  AdventureService,
+  AdventureContext,
+  AdventureState,
+  Adventure,
+  AdventureType,
+  AdventureStatus,
+  LootDrop,
+  Rarity,
+  AdventureCreateResult,
+  AdventureUpdateResult,
+  AdventureCompleteResult,
 } from './types';
 export { emptyAdventureState } from './types';
 export { ADVENTURE_BASE_DURATION_MS, MAX_ADVENTURES_ACTIVE } from './constants';
@@ -1802,102 +1946,2141 @@ git add src/systems/adventure tests/unit/systems/adventure.test.ts
 git commit -m "feat(systems): implement Adventure service with loot generation"
 ```
 ---
-## Chunk 6: Adventure System - Plugin
-> **Dependencies:** Chunk 5 (Adventure Service)
-> **Files:**
-> - Create: `src/domain/pipeline/plugins/adventures.plugin.ts`
-> - Create: `tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
-> - Update: `src/domain/pipeline/plugins/index.ts` (add export)
-> - Run: tests
-> - Commit
-> - [ ] **Step 1: Create test file with failing tests**
-> - [ ] **Step 2: Run test to verify it fails**
-> - [ ] **Step 3: Create plugin implementation**
-> - [ ] **Step 4: Run tests**
-> - [ ] **Step 5: Commit
+## Chunk 6: Adventure Plugin
 
+**Dependencies:** Chunk 5 (Adventure Service)
+
+**Files:**
+- Create: `src/domain/pipeline/plugins/adventures.plugin.ts`
+- Create: `tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+// tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts
+import { describe, it, expect } from 'vitest';
+import { createAdventuresPlugin } from '../../../../../src/domain/pipeline/plugins/adventures.plugin';
+import type { TickContext } from '../../../../../src/domain/pipeline/types';
+import { SeededRng } from '../../../../../src/core/rng';
+import { createInitialState } from '../../../../../src/state/initial';
+
+describe('AdventuresPlugin', () => {
+  it('processes in-progress adventures and updates progress', () => {
+    const plugin = createAdventuresPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    // Add an in-progress adventure
+    const adventure = {
+      id: 'adv-1',
+      type: 'dungeon' as const,
+      status: 'in_progress' as const,
+      heroIds: ['bard-1'],
+      startedAt: Date.now() - 10000,
+      duration: 60000,
+      progress: 10000,
+      difficulty: 3,
+      rarity: 'rare' as const,
+    };
+
+    const stateWithAdventure = {
+      ...state,
+      adventures: {
+        ...state.adventures,
+        adventures: [adventure],
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithAdventure,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    expect(result.state.adventures.adventures[0].progress).toBeGreaterThan(10000);
+  });
+
+  it('completes adventures when progress reaches duration', () => {
+    const plugin = createAdventuresPlugin();
+    const now = Date.now();
+    const state = createInitialState(now, 12345);
+
+    const adventure = {
+      id: 'adv-1',
+      type: 'dungeon' as const,
+      status: 'in_progress' as const,
+      heroIds: ['bard-1'],
+      startedAt: now - 60000,
+      duration: 60000,
+      progress: 59999,
+      difficulty: 3,
+      rarity: 'rare' as const,
+    };
+
+    const stateWithAdventure = {
+      ...state,
+      adventures: {
+        ...state.adventures,
+        adventures: [adventure],
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithAdventure,
+      rng: new SeededRng(12345),
+      now,
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    expect(result.state.adventures.adventures[0].status).toBe('completed');
+    expect(result.events.some(e => e.type === 'ADVENTURE_COMPLETED')).toBe(true);
+  });
+});
 ```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
+Expected: FAIL with "Cannot find module"
+
+- [ ] **Step 3: Create plugin implementation**
+
+```typescript
+// src/domain/pipeline/plugins/adventures.plugin.ts
+import type { TickPlugin, TickContext, TickResult } from '../types';
+import { PLUGIN_ORDER } from '../types';
+import type { Adventure } from '../../../systems/adventure';
+import { AdventureServiceImpl } from '../../../systems/adventure';
+
+export function createAdventuresPlugin(): TickPlugin {
+  const service = new AdventureServiceImpl();
+
+  return {
+    name: 'adventures',
+    order: PLUGIN_ORDER.ADVENTURES,
+
+    process(ctx: TickContext): TickResult {
+      const adventures = ctx.state.adventures.adventures;
+      const events: import('../../../types').DomainEvent[] = [];
+      let updatedAdventures = [...adventures];
+
+      for (let i = 0; i < updatedAdventures.length; i++) {
+        const adventure = updatedAdventures[i];
+
+        if (adventure.status === 'in_progress') {
+          const result = service.updateProgress(adventure, {
+            state: ctx.state,
+            rng: ctx.rng,
+            now: ctx.now,
+          });
+
+          updatedAdventures[i] = result.adventure;
+
+          if (result.completed) {
+            const completed = service.completeAdventure(result.adventure, {
+              state: ctx.state,
+              rng: ctx.rng,
+              now: ctx.now,
+            });
+
+            updatedAdventures[i] = completed.adventure;
+            events.push(...completed.events);
+          }
+        }
+      }
+
+      return {
+        state: {
+          ...ctx.state,
+          adventures: {
+            ...ctx.state.adventures,
+            adventures: updatedAdventures,
+          },
+        },
+        events,
+      };
+    },
+  };
+}
+```
+
+- [ ] **Step 4: Update plugins index**
+
+```typescript
+// src/domain/pipeline/plugins/index.ts
+export { createAdventuresPlugin } from './adventures.plugin';
+```
+
+- [ ] **Step 5: Run tests**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/adventures.plugin.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/domain/pipeline/plugins tests/unit/domain/pipeline/plugins
+git commit -m "feat(pipeline): add adventures plugin for tick processing"
+```
+
 ---
 ## Chunk 7: World System
-> **Dependencies:** Chunk 1 (RNG), Chunk 2 (Pipeline Types)
-> **Files:**
-> - Create: `src/systems/world/types.ts`
-> - Create: `src/systems/world/service.ts`
-> - Create: `src/systems/world/constants.ts`
-> - Create: `src/systems/world/index.ts`
-> - Create: `src/domain/pipeline/plugins/world.plugin.ts`
-> - Create: `tests/unit/systems/world.test.ts`
-> - Create: `tests/unit/domain/pipeline/plugins/world.plugin.test.ts`
-> - Modify: `src/types/state.ts` (add WorldState)
-> - Modify: `src/state/initial.ts` (add emptyWorldState)
-> - Run: tests
-> - Commit
+
+**Dependencies:** Chunk 1 (RNG), Chunk 2 (Pipeline Types)
+
+**Files:**
+- Create: `src/systems/world/types.ts`
+- Create: `src/systems/world/service.ts`
+- Create: `src/systems/world/constants.ts`
+- Create: `src/systems/world/index.ts`
+- Create: `tests/unit/systems/world.test.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+// tests/unit/systems/world.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { WorldServiceImpl } from '../../../src/systems/world/service';
+import type { WorldService, WorldContext, WorldState, WorldModifiers } from '../../../src/systems/world/types';
+import { SeededRng } from '../../../src/core/rng';
+import { emptyWorldState } from '../../../src/systems/world';
+
+describe('WorldSystem', () => {
+  let service: WorldService;
+  let rng: SeededRng;
+
+  beforeEach(() => {
+    service = new WorldServiceImpl();
+    rng = new SeededRng(12345);
+  });
+
+  describe('update', () => {
+    it('advances time of day based on tick', () => {
+      const state = emptyWorldState();
+      const ctx: WorldContext = {
+        state: { world: state },
+        rng,
+        now: Date.now(),
+      };
+
+      const result = service.update(ctx);
+
+      // Time should advance
+      expect(result.state).toBeDefined();
+    });
+
+    it('changes weather periodically', () => {
+      const state = { ...emptyWorldState(), weather: 'clear' as const };
+      const ctx: WorldContext = {
+        state: { world: state },
+        rng,
+        now: Date.now(),
+      };
+
+      // Multiple updates may change weather
+      let currentWeather = state.weather;
+      for (let i = 0; i < 100; i++) {
+        const result = service.update({
+          ...ctx,
+          rng: new SeededRng(i),
+        });
+        currentWeather = result.state.weather;
+      }
+
+      // Weather should have changed at least once
+      // (probabilistic, but very likely)
+    });
+  });
+
+  describe('getModifiers', () => {
+    it('returns default modifiers for clear weather', () => {
+      const state = { ...emptyWorldState(), weather: 'clear' as const };
+
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.incomeMultiplier).toBe(1.0);
+      expect(modifiers.visitorSpawnRate).toBe(1.0);
+      expect(modifiers.adventureSuccessBonus).toBe(0);
+    });
+
+    it('reduces income during storm', () => {
+      const state = { ...emptyWorldState(), weather: 'storm' as const };
+
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.incomeMultiplier).toBeLessThan(1.0);
+    });
+
+    it('increases visitors during festival', () => {
+      const state = {
+        ...emptyWorldState(),
+        activeEvents: [{ id: 'festival-1', type: 'festival', data: {} }],
+      };
+
+      const modifiers = service.getModifiers(state);
+
+      expect(modifiers.visitorSpawnRate).toBeGreaterThan(1.0);
+    });
+  });
+
+  describe('isEventActive', () => {
+    it('returns true for active event', () => {
+      const state = {
+        ...emptyWorldState(),
+        activeEvents: [{ id: 'plague-1', type: 'plague', data: {} }],
+      };
+
+      expect(service.isEventActive('plague-1', state)).toBe(true);
+    });
+
+    it('returns false for inactive event', () => {
+      const state = emptyWorldState();
+
+      expect(service.isEventActive('plague-1', state)).toBe(false);
+    });
+  });
+});
 ```
-- [ ] **Steps 1-5**: Similar to Adventure System pattern
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/systems/world.test.ts`
+Expected: FAIL with "Cannot find module"
+
+- [ ] **Step 3: Create world types**
+
+```typescript
+// src/systems/world/types.ts
+export type TimeOfDay = 'dawn' | 'morning' | 'noon' | 'afternoon' | 'evening' | 'night' | 'midnight';
+export type Weather = 'clear' | 'cloudy' | 'rain' | 'storm' | 'snow';
+export type WorldEventType = 'festival' | 'plague' | 'drought' | 'war' | 'trade_route';
+
+export interface WorldEvent {
+  readonly id: string;
+  readonly type: WorldEventType;
+  readonly data: Record<string, unknown>;
+}
+
+export interface WorldState {
+  readonly timeOfDay: TimeOfDay;
+  readonly weather: Weather;
+  readonly dayNumber: number;
+  readonly activeEvents: readonly WorldEvent[];
+  readonly tickInDay: number;
+}
+
+export const emptyWorldState = (): WorldState => ({
+  timeOfDay: 'dawn',
+  weather: 'clear',
+  dayNumber: 1,
+  activeEvents: [],
+  tickInDay: 0,
+});
+
+export interface WorldSlice {
+  readonly world: WorldState;
+}
+
+export interface WorldContext {
+  readonly state: WorldSlice;
+  readonly rng: import('../../core/rng').RngService;
+  readonly now: number;
+}
+
+export interface WorldModifiers {
+  readonly incomeMultiplier: number;
+  readonly visitorSpawnRate: number;
+  readonly adventureSuccessBonus: number;
+}
+
+export interface WorldUpdateResult {
+  readonly state: WorldState;
+  readonly events: readonly import('../../types').DomainEvent[];
+}
+
+export interface WorldService {
+  update(ctx: WorldContext): WorldUpdateResult;
+  getModifiers(state: WorldState): WorldModifiers;
+  isEventActive(eventId: string, state: WorldState): boolean;
+}
+```
+
+- [ ] **Step 4: Create world constants**
+
+```typescript
+// src/systems/world/constants.ts
+import type { TimeOfDay, Weather, WorldEventType } from './types';
+
+/** Ticks per time-of-day transition */
+export const TICKS_PER_TOD = 10;
+
+/** Weather change chance per tick */
+export const WEATHER_CHANGE_CHANCE = 0.05;
+
+/** Weather modifiers */
+export const WEATHER_MODIFIERS: Record<Weather, { income: number; visitors: number; adventure: number }> = {
+  clear: { income: 1.0, visitors: 1.0, adventure: 0 },
+  cloudy: { income: 1.0, visitors: 0.95, adventure: 0 },
+  rain: { income: 0.9, visitors: 0.8, adventure: -0.1 },
+  storm: { income: 0.7, visitors: 0.5, adventure: -0.2 },
+  snow: { income: 0.8, visitors: 0.7, adventure: -0.15 },
+};
+
+/** Event modifiers */
+export const EVENT_MODIFIERS: Record<WorldEventType, { income: number; visitors: number; adventure: number }> = {
+  festival: { income: 1.5, visitors: 2.0, adventure: 0 },
+  plague: { income: 0.7, visitors: 0.3, adventure: -0.1 },
+  drought: { income: 0.8, visitors: 0.9, adventure: 0 },
+  war: { income: 1.2, visitors: 0.6, adventure: 0.2 },
+  trade_route: { income: 1.3, visitors: 1.2, adventure: 0 },
+};
+
+/** Time of day progression */
+export const TOD_ORDER: TimeOfDay[] = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night', 'midnight'];
+```
+
+- [ ] **Step 5: Create world service**
+
+```typescript
+// src/systems/world/service.ts
+import type { WorldService, WorldContext, WorldState, WorldModifiers, WorldUpdateResult, Weather } from './types';
+import { TICKS_PER_TOD, WEATHER_CHANGE_CHANCE, WEATHER_MODIFIERS, EVENT_MODIFIERS, TOD_ORDER } from './constants';
+
+export class WorldServiceImpl implements WorldService {
+  update(ctx: WorldContext): WorldUpdateResult {
+    let state = ctx.state.world;
+    const events: import('../../types').DomainEvent[] = [];
+    const stream = ctx.rng.createStream('world');
+
+    // Advance time
+    const newTickInDay = state.tickInDay + 1;
+    const todIndex = TOD_ORDER.indexOf(state.timeOfDay);
+    const newTodIndex = Math.floor(newTickInDay / TICKS_PER_TOD) % TOD_ORDER.length;
+    const newTimeOfDay = TOD_ORDER[newTodIndex];
+    const newDayNumber = state.dayNumber + Math.floor(newTickInDay / (TICKS_PER_TOD * TOD_ORDER.length));
+
+    // Weather change
+    let newWeather = state.weather;
+    if (stream.chance(WEATHER_CHANGE_CHANCE)) {
+      newWeather = this.rollWeather(stream);
+      if (newWeather !== state.weather) {
+        events.push({
+          type: 'WEATHER_CHANGED',
+          from: state.weather,
+          to: newWeather,
+          timestamp: ctx.now,
+        });
+      }
+    }
+
+    state = {
+      ...state,
+      timeOfDay: newTimeOfDay,
+      dayNumber: newDayNumber,
+      tickInDay: newTickInDay % (TICKS_PER_TOD * TOD_ORDER.length),
+      weather: newWeather,
+    };
+
+    return { state, events };
+  }
+
+  getModifiers(state: WorldState): WorldModifiers {
+    const weatherMod = WEATHER_MODIFIERS[state.weather];
+
+    let incomeMultiplier = weatherMod.income;
+    let visitorSpawnRate = weatherMod.visitors;
+    let adventureSuccessBonus = weatherMod.adventure;
+
+    for (const event of state.activeEvents) {
+      const eventMod = EVENT_MODIFIERS[event.type];
+      incomeMultiplier *= eventMod.income;
+      visitorSpawnRate *= eventMod.visitors;
+      adventureSuccessBonus += eventMod.adventure;
+    }
+
+    return { incomeMultiplier, visitorSpawnRate, adventureSuccessBonus };
+  }
+
+  isEventActive(eventId: string, state: WorldState): boolean {
+    return state.activeEvents.some(e => e.id === eventId);
+  }
+
+  private rollWeather(stream: import('../../core/rng').RngService): Weather {
+    const weathers: Weather[] = ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain', 'storm', 'snow'];
+    return stream.pick(weathers);
+  }
+}
+```
+
+- [ ] **Step 6: Create world index**
+
+```typescript
+// src/systems/world/index.ts
+export type {
+  WorldService,
+  WorldContext,
+  WorldState,
+  WorldSlice,
+  WorldModifiers,
+  WorldUpdateResult,
+  WorldEvent,
+  TimeOfDay,
+  Weather,
+  WorldEventType,
+} from './types';
+export { emptyWorldState } from './types';
+export { WorldServiceImpl } from './service';
+export { TICKS_PER_TOD, WEATHER_MODIFIERS, EVENT_MODIFIERS } from './constants';
+```
+
+- [ ] **Step 7: Run tests**
+
+Run: `npx vitest run tests/unit/systems/world.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/systems/world tests/unit/systems/world.test.ts
+git commit -m "feat(systems): implement World system with time and weather"
+```
+
+- [ ] **Step 9: Write World Plugin tests**
+
+```typescript
+// tests/unit/domain/pipeline/plugins/world.plugin.test.ts
+import { describe, it, expect } from 'vitest';
+import { createWorldPlugin } from '../../../../../src/domain/pipeline/plugins/world.plugin';
+import type { TickContext } from '../../../../../src/domain/pipeline/types';
+import { SeededRng } from '../../../../../src/core/rng';
+import { createInitialState } from '../../../../../src/state/initial';
+
+describe('WorldPlugin', () => {
+  it('updates world state on tick', () => {
+    const plugin = createWorldPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    const ctx: TickContext = {
+      state,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    expect(result.state.world.tickInDay).toBeGreaterThan(state.world.tickInDay);
+  });
+
+  it('emits weather change events', () => {
+    const plugin = createWorldPlugin();
+    const state = createInitialState(Date.now(), 99999);
+
+    // Run many ticks to potentially trigger weather change
+    let currentState = state;
+    let allEvents: any[] = [];
+
+    for (let i = 0; i < 100; i++) {
+      const ctx: TickContext = {
+        state: currentState,
+        rng: new SeededRng(99999 + i),
+        now: Date.now() + i * 40,
+        accumulatedEvents: [],
+      };
+
+      const result = plugin.process(ctx);
+      currentState = result.state;
+      allEvents.push(...result.events);
+    }
+
+    // Weather changes are probabilistic but should have at least some events
+    expect(currentState.world).toBeDefined();
+  });
+
+  it('has correct plugin order', () => {
+    const plugin = createWorldPlugin();
+
+    expect(plugin.order).toBe(600); // PLUGIN_ORDER.WORLD
+  });
+});
+```
+
+- [ ] **Step 10: Create World Plugin implementation**
+
+```typescript
+// src/domain/pipeline/plugins/world.plugin.ts
+import type { TickPlugin, TickContext, TickResult } from '../types';
+import { PLUGIN_ORDER } from '../types';
+import { WorldServiceImpl } from '../../../systems/world';
+import type { DomainEvent } from '../../../types';
+
+export function createWorldPlugin(): TickPlugin {
+  const service = new WorldServiceImpl();
+
+  return {
+    name: 'world',
+    order: PLUGIN_ORDER.WORLD,
+
+    process(ctx: TickContext): TickResult {
+      const worldResult = service.update({
+        state: { world: ctx.state.world },
+        rng: ctx.rng,
+        now: ctx.now,
+      });
+
+      return {
+        state: { ...ctx.state, world: worldResult.state },
+        events: worldResult.events as DomainEvent[],
+      };
+    },
+  };
+}
+```
+
+- [ ] **Step 11: Run World Plugin tests**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/world.plugin.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 12: Commit World Plugin**
+
+```bash
+git add src/domain/pipeline/plugins/world.plugin.ts tests/unit/domain/pipeline/plugins/world.plugin.test.ts
+git commit -m "feat(pipeline): add World plugin for time and weather updates"
+```
+
 ---
 ## Chunk 8: Event Log System
-> **Dependencies:** None (standalone)
-> **Files:**
-> - Create: `src/systems/event-log/types.ts`
-> - Create: `src/systems/event-log/service.ts`
-> - Create: `src/systems/event-log/index.ts`
-> - Create: `tests/unit/systems/event-log.test.ts`
-> - Modify: `src/types/state.ts` (add EventLogState)
-> - Modify: `src/state/initial.ts` (add emptyEventLogState)
-> - Run: tests
-> - Commit
+
+**Dependencies:** None (standalone)
+
+**Files:**
+- Create: `src/systems/event-log/types.ts`
+- Create: `src/systems/event-log/service.ts`
+- Create: `src/systems/event-log/index.ts`
+- Create: `tests/unit/systems/event-log.test.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+// tests/unit/systems/event-log.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { EventLogServiceImpl } from '../../../src/systems/event-log/service';
+import type { EventLogService, EventLogState, LogEntry, Notification, EventFilter } from '../../../src/systems/event-log/types';
+import { emptyEventLogState } from '../../../src/systems/event-log';
+
+describe('EventLogSystem', () => {
+  let service: EventLogService;
+  let state: EventLogState;
+
+  beforeEach(() => {
+    service = new EventLogServiceImpl();
+    state = emptyEventLogState();
+  });
+
+  describe('append', () => {
+    it('adds entry to log', () => {
+      const entry: LogEntry = {
+        id: 'log-1',
+        timestamp: Date.now(),
+        type: 'hero_hired',
+        data: { heroId: 'bard-1' },
+      };
+
+      const newState = service.append(entry, state);
+
+      expect(newState.entries).toHaveLength(1);
+      expect(newState.entries[0]).toEqual(entry);
+    });
+
+    it('truncates old entries when max exceeded', () => {
+      state = { ...state, maxEntries: 3 };
+
+      for (let i = 0; i < 5; i++) {
+        state = service.append({
+          id: `log-${i}`,
+          timestamp: Date.now() + i,
+          type: 'hero_hired',
+          data: {},
+        }, state);
+      }
+
+      expect(state.entries.length).toBeLessThanOrEqual(3);
+    });
+  });
+
+  describe('query', () => {
+    beforeEach(() => {
+      const entries: LogEntry[] = [
+        { id: '1', timestamp: 1000, type: 'hero_hired', data: {} },
+        { id: '2', timestamp: 2000, type: 'visitor_arrived', data: {} },
+        { id: '3', timestamp: 3000, type: 'hero_hired', data: {} },
+        { id: '4', timestamp: 4000, type: 'adventure_started', data: {} },
+      ];
+      state = { ...state, entries };
+    });
+
+    it('filters by type', () => {
+      const filter: EventFilter = { types: ['hero_hired'] };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type === 'hero_hired')).toBe(true);
+    });
+
+    it('filters by time range', () => {
+      const filter: EventFilter = { since: 1500, until: 3500 };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+    });
+
+    it('limits results', () => {
+      const filter: EventFilter = { limit: 2 };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('notifications', () => {
+    it('creates notification', () => {
+      const newState = service.createNotification({
+        type: 'info',
+        title: 'Test',
+        message: 'Test message',
+        isRead: false,
+      }, state);
+
+      expect(newState.notifications).toHaveLength(1);
+      expect(newState.notifications[0].title).toBe('Test');
+    });
+
+    it('gets unread notifications', () => {
+      state = {
+        ...state,
+        notifications: [
+          { id: 'n1', timestamp: 1000, type: 'info', title: 'A', message: 'a', isRead: true },
+          { id: 'n2', timestamp: 2000, type: 'success', title: 'B', message: 'b', isRead: false },
+        ],
+      };
+
+      const unread = service.getUnread(state);
+
+      expect(unread).toHaveLength(1);
+      expect(unread[0].id).toBe('n2');
+    });
+
+    it('marks notifications as read', () => {
+      state = {
+        ...state,
+        notifications: [
+          { id: 'n1', timestamp: 1000, type: 'info', title: 'A', message: 'a', isRead: false },
+          { id: 'n2', timestamp: 2000, type: 'success', title: 'B', message: 'b', isRead: false },
+        ],
+      };
+
+      const newState = service.markRead(['n1'], state);
+
+      expect(newState.notifications[0].isRead).toBe(true);
+      expect(newState.notifications[1].isRead).toBe(false);
+    });
+  });
+});
 ```
-- [ ] **Steps 1-4**: Similar to Adventure System pattern
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/systems/event-log.test.ts`
+Expected: FAIL with "Cannot find module"
+
+- [ ] **Step 3: Create event-log types**
+
+```typescript
+// src/systems/event-log/types.ts
+export type LogEventType =
+  | 'hero_hired' | 'hero_upgraded' | 'visitor_arrived' | 'visitor_departed'
+  | 'adventure_started' | 'adventure_completed' | 'adventure_failed'
+  | 'loot_obtained' | 'gold_earned' | 'world_event' | 'personality_changed';
+
+export interface LogEntry {
+  readonly id: string;
+  readonly timestamp: number;
+  readonly type: LogEventType | string;
+  readonly data: Record<string, unknown>;
+}
+
+export interface Notification {
+  readonly id: string;
+  readonly timestamp: number;
+  readonly type: 'info' | 'success' | 'warning';
+  readonly title: string;
+  readonly message: string;
+  readonly isRead: boolean;
+}
+
+export interface EventLogState {
+  readonly entries: readonly LogEntry[];
+  readonly notifications: readonly Notification[];
+  readonly lastReadAt: number;
+  readonly maxEntries: number;
+}
+
+export const emptyEventLogState = (): EventLogState => ({
+  entries: [],
+  notifications: [],
+  lastReadAt: 0,
+  maxEntries: 100,
+});
+
+export interface EventLogSlice {
+  readonly eventLog: EventLogState;
+}
+
+export interface EventFilter {
+  readonly since?: number;
+  readonly until?: number;
+  readonly types?: readonly string[];
+  readonly limit?: number;
+}
+
+export interface EventLogService {
+  append(entry: LogEntry, state: EventLogState): EventLogState;
+  query(filter: EventFilter, state: EventLogState): readonly LogEntry[];
+  getUnread(state: EventLogState): readonly Notification[];
+  markRead(ids: readonly string[], state: EventLogState): EventLogState;
+  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, state: EventLogState): EventLogState;
+}
+```
+
+- [ ] **Step 4: Create event-log service**
+
+```typescript
+// src/systems/event-log/service.ts
+import type { EventLogService, EventLogState, LogEntry, Notification, EventFilter } from './types';
+
+export class EventLogServiceImpl implements EventLogService {
+  append(entry: LogEntry, state: EventLogState): EventLogState {
+    const entries = [...state.entries, entry];
+
+    // Truncate if needed
+    if (entries.length > state.maxEntries) {
+      entries.splice(0, entries.length - state.maxEntries);
+    }
+
+    return { ...state, entries };
+  }
+
+  query(filter: EventFilter, state: EventLogState): readonly LogEntry[] {
+    let result = [...state.entries];
+
+    if (filter.since !== undefined) {
+      result = result.filter(e => e.timestamp >= filter.since!);
+    }
+    if (filter.until !== undefined) {
+      result = result.filter(e => e.timestamp <= filter.until!);
+    }
+    if (filter.types !== undefined && filter.types.length > 0) {
+      result = result.filter(e => filter.types!.includes(e.type));
+    }
+    if (filter.limit !== undefined) {
+      result = result.slice(-filter.limit);
+    }
+
+    return result;
+  }
+
+  getUnread(state: EventLogState): readonly Notification[] {
+    return state.notifications.filter(n => !n.isRead);
+  }
+
+  markRead(ids: readonly string[], state: EventLogState): EventLogState {
+    const idSet = new Set(ids);
+    const now = Date.now();
+
+    return {
+      ...state,
+      lastReadAt: now,
+      notifications: state.notifications.map(n =>
+        idSet.has(n.id) ? { ...n, isRead: true } : n
+      ),
+    };
+  }
+
+  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, state: EventLogState): EventLogState {
+    const notification: Notification = {
+      ...input,
+      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: Date.now(),
+    };
+
+    return {
+      ...state,
+      notifications: [...state.notifications, notification],
+    };
+  }
+}
+```
+
+- [ ] **Step 5: Create event-log index**
+
+```typescript
+// src/systems/event-log/index.ts
+export type {
+  EventLogService,
+  EventLogState,
+  EventLogSlice,
+  LogEntry,
+  Notification,
+  EventFilter,
+  LogEventType,
+} from './types';
+export { emptyEventLogState } from './types';
+export { EventLogServiceImpl } from './service';
+```
+
+- [ ] **Step 6: Run tests**
+
+Run: `npx vitest run tests/unit/systems/event-log.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/systems/event-log tests/unit/systems/event-log.test.ts
+git commit -m "feat(systems): implement Event Log system with notifications"
+```
+
 ---
 ## Chunk 9: Personality System
-> **Dependencies:** None (standalone)
-> **Files:**
-> - Create: `src/systems/personality/types.ts`
-> - Create: `src/systems/personality/service.ts`
-> - Create: `src/systems/personality/traits.ts`
-> - Create: `src/systems/personality/index.ts`
-> - Create: `tests/unit/systems/personality.test.ts`
-> - Modify: `src/types/state.ts` (add PersonalitySlice)
-> - Modify: `src/state/initial.ts` (add emptyPersonalityState)
-> - Run: tests
-> - Commit
+
+**Dependencies:** None (standalone)
+
+**Files:**
+- Create: `src/systems/personality/types.ts`
+- Create: `src/systems/personality/service.ts`
+- Create: `src/systems/personality/traits.ts`
+- Create: `src/systems/personality/index.ts`
+- Create: `tests/unit/systems/personality.test.ts`
+
+- [ ] **Step 1: Write failing tests**
+
+```typescript
+// tests/unit/systems/personality.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { PersonalityServiceImpl } from '../../../src/systems/personality/service';
+import type { PersonalityService, PersonalityState, Trait, TraitEffectsResult } from '../../../src/systems/personality/types';
+import { emptyPersonalityState, ALL_TRAITS } from '../../../src/systems/personality';
+
+describe('PersonalitySystem', () => {
+  let service: PersonalityService;
+
+  beforeEach(() => {
+    service = new PersonalityServiceImpl();
+  });
+
+  describe('getTraits', () => {
+    it('returns all available traits', () => {
+      const traits = service.getTraits();
+
+      expect(traits.length).toBeGreaterThan(0);
+      expect(traits[0]).toHaveProperty('id');
+      expect(traits[0]).toHaveProperty('name');
+      expect(traits[0]).toHaveProperty('effects');
+    });
+  });
+
+  describe('getTrait', () => {
+    it('returns trait by id', () => {
+      const trait = service.getTrait('brave');
+
+      expect(trait).toBeDefined();
+      expect(trait?.name).toBe('Brave');
+    });
+
+    it('returns undefined for unknown trait', () => {
+      const trait = service.getTrait('unknown');
+
+      expect(trait).toBeUndefined();
+    });
+  });
+
+  describe('getPersonality', () => {
+    it('returns empty state for unknown hero', () => {
+      const slice = { heroPersonalities: {} };
+
+      const personality = service.getPersonality('unknown-hero', slice);
+
+      expect(personality.traits).toEqual([]);
+      expect(personality.corruption).toBe(0);
+    });
+
+    it('returns existing personality', () => {
+      const existing: PersonalityState = { traits: ['brave'], corruption: 0.2 };
+      const slice = { heroPersonalities: { 'hero-1': existing } };
+
+      const personality = service.getPersonality('hero-1', slice);
+
+      expect(personality).toEqual(existing);
+    });
+  });
+
+  describe('calculateCorruption', () => {
+    it('returns 0 for empty traits', () => {
+      const personality = emptyPersonalityState();
+
+      const corruption = service.calculateCorruption(personality, ALL_TRAITS);
+
+      expect(corruption).toBe(0);
+    });
+
+    it('increases corruption based on trait weights', () => {
+      const personality: PersonalityState = { traits: ['greedy', 'suspicious'], corruption: 0 };
+
+      const corruption = service.calculateCorruption(personality, ALL_TRAITS);
+
+      expect(corruption).toBeGreaterThan(0);
+    });
+  });
+
+  describe('applyTraitEffects', () => {
+    it('combines effects from multiple traits', () => {
+      const personality: PersonalityState = { traits: ['brave', 'generous'], corruption: 0 };
+
+      const effects = service.applyTraitEffects(personality, ALL_TRAITS);
+
+      expect(effects.incomeMultiplier).toBeDefined();
+      expect(effects.adventureBonus).toBeDefined();
+      expect(effects.corruptionResistance).toBeDefined();
+    });
+  });
+
+  describe('canGainTrait', () => {
+    it('returns false if already has trait', () => {
+      const personality: PersonalityState = { traits: ['brave'], corruption: 0 };
+
+      const canGain = service.canGainTrait(personality, 'brave', ALL_TRAITS);
+
+      expect(canGain).toBe(false);
+    });
+
+    it('returns false if at max traits', () => {
+      const personality: PersonalityState = {
+        traits: ['brave', 'cautious', 'generous', 'curious'],
+        corruption: 0,
+      };
+
+      const canGain = service.canGainTrait(personality, 'suspicious', ALL_TRAITS);
+
+      expect(canGain).toBe(false);
+    });
+
+    it('returns true for valid new trait', () => {
+      const personality: PersonalityState = { traits: ['brave'], corruption: 0 };
+
+      const canGain = service.canGainTrait(personality, 'cautious', ALL_TRAITS);
+
+      expect(canGain).toBe(true);
+    });
+  });
+
+  describe('gainTrait', () => {
+    it('adds trait to personality', () => {
+      const personality: PersonalityState = { traits: ['brave'], corruption: 0 };
+
+      const newPersonality = service.gainTrait(personality, 'generous', ALL_TRAITS);
+
+      expect(newPersonality.traits).toContain('generous');
+      expect(newPersonality.traits).toContain('brave');
+    });
+
+    it('does not mutate original', () => {
+      const personality: PersonalityState = { traits: ['brave'], corruption: 0 };
+
+      service.gainTrait(personality, 'generous', ALL_TRAITS);
+
+      expect(personality.traits).not.toContain('generous');
+    });
+  });
+});
 ```
-- [ ] **Steps 1-4**: Similar to Event Log System pattern
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/systems/personality.test.ts`
+Expected: FAIL with "Cannot find module"
+
+- [ ] **Step 3: Create personality types**
+
+```typescript
+// src/systems/personality/types.ts
+export type TraitType = 'brave' | 'cautious' | 'greedy' | 'generous' | 'curious' | 'suspicious';
+
+export interface TraitEffect {
+  readonly type: 'income_modifier' | 'adventure_bonus' | 'corruption_resistance';
+  readonly value: number;
+}
+
+export interface Trait {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly type: TraitType;
+  readonly effects: readonly TraitEffect[];
+  readonly corruptionWeight: number;
+}
+
+export interface PersonalityState {
+  readonly traits: readonly string[];
+  readonly corruption: number;
+}
+
+export const emptyPersonalityState = (): PersonalityState => ({
+  traits: [],
+  corruption: 0,
+});
+
+export interface PersonalitySlice {
+  readonly heroPersonalities: Record<string, PersonalityState>;
+}
+
+export interface TraitEffectsResult {
+  readonly incomeMultiplier: number;
+  readonly adventureBonus: number;
+  readonly corruptionResistance: number;
+}
+
+export interface PersonalityService {
+  getTraits(): readonly Trait[];
+  getTrait(id: string): Trait | undefined;
+  getPersonality(heroId: string, slice: PersonalitySlice): PersonalityState;
+  calculateCorruption(personality: PersonalityState, traits: readonly Trait[]): number;
+  applyTraitEffects(personality: PersonalityState, traits: readonly Trait[]): TraitEffectsResult;
+  canGainTrait(personality: PersonalityState, traitId: string, traits: readonly Trait[]): boolean;
+  gainTrait(personality: PersonalityState, traitId: string, traits: readonly Trait[]): PersonalityState;
+}
+```
+
+- [ ] **Step 4: Create traits definitions**
+
+```typescript
+// src/systems/personality/traits.ts
+import type { Trait } from './types';
+
+export const ALL_TRAITS: readonly Trait[] = [
+  {
+    id: 'brave',
+    name: 'Brave',
+    description: 'Increases adventure success chance',
+    type: 'brave',
+    effects: [{ type: 'adventure_bonus', value: 0.1 }],
+    corruptionWeight: 0,
+  },
+  {
+    id: 'cautious',
+    name: 'Cautious',
+    description: 'Resists corruption better',
+    type: 'cautious',
+    effects: [{ type: 'corruption_resistance', value: 0.2 }],
+    corruptionWeight: 0,
+  },
+  {
+    id: 'greedy',
+    name: 'Greedy',
+    description: 'Increases income but prone to corruption',
+    type: 'greedy',
+    effects: [{ type: 'income_modifier', value: 0.15 }],
+    corruptionWeight: 0.3,
+  },
+  {
+    id: 'generous',
+    name: 'Generous',
+    description: 'Slightly less income but corruption resistant',
+    type: 'generous',
+    effects: [
+      { type: 'income_modifier', value: -0.05 },
+      { type: 'corruption_resistance', value: 0.15 },
+    ],
+    corruptionWeight: 0,
+  },
+  {
+    id: 'curious',
+    name: 'Curious',
+    description: 'Better adventure rewards',
+    type: 'curious',
+    effects: [{ type: 'adventure_bonus', value: 0.05 }],
+    corruptionWeight: 0.1,
+  },
+  {
+    id: 'suspicious',
+    name: 'Suspicious',
+    description: 'Very corruption resistant but less income',
+    type: 'suspicious',
+    effects: [
+      { type: 'corruption_resistance', value: 0.3 },
+      { type: 'income_modifier', value: -0.1 },
+    ],
+    corruptionWeight: 0,
+  },
+];
+
+export const MAX_TRAITS_PER_HERO = 4;
+```
+
+- [ ] **Step 5: Create personality service**
+
+```typescript
+// src/systems/personality/service.ts
+import type { PersonalityService, PersonalityState, PersonalitySlice, Trait, TraitEffectsResult } from './types';
+import { ALL_TRAITS, MAX_TRAITS_PER_HERO } from './traits';
+
+export class PersonalityServiceImpl implements PersonalityService {
+  getTraits(): readonly Trait[] {
+    return ALL_TRAITS;
+  }
+
+  getTrait(id: string): Trait | undefined {
+    return ALL_TRAITS.find(t => t.id === id);
+  }
+
+  getPersonality(heroId: string, slice: PersonalitySlice): PersonalityState {
+    return slice.heroPersonalities[heroId] ?? { traits: [], corruption: 0 };
+  }
+
+  calculateCorruption(personality: PersonalityState, traits: readonly Trait[]): number {
+    let corruption = personality.corruption;
+
+    for (const traitId of personality.traits) {
+      const trait = traits.find(t => t.id === traitId);
+      if (trait) {
+        corruption += trait.corruptionWeight;
+      }
+    }
+
+    return Math.min(1, Math.max(0, corruption));
+  }
+
+  applyTraitEffects(personality: PersonalityState, traits: readonly Trait[]): TraitEffectsResult {
+    let incomeMultiplier = 1.0;
+    let adventureBonus = 0;
+    let corruptionResistance = 0;
+
+    for (const traitId of personality.traits) {
+      const trait = traits.find(t => t.id === traitId);
+      if (!trait) continue;
+
+      for (const effect of trait.effects) {
+        switch (effect.type) {
+          case 'income_modifier':
+            incomeMultiplier += effect.value;
+            break;
+          case 'adventure_bonus':
+            adventureBonus += effect.value;
+            break;
+          case 'corruption_resistance':
+            corruptionResistance += effect.value;
+            break;
+        }
+      }
+    }
+
+    return { incomeMultiplier, adventureBonus, corruptionResistance };
+  }
+
+  canGainTrait(personality: PersonalityState, traitId: string, traits: readonly Trait[]): boolean {
+    if (personality.traits.includes(traitId)) return false;
+    if (personality.traits.length >= MAX_TRAITS_PER_HERO) return false;
+    if (!traits.find(t => t.id === traitId)) return false;
+    return true;
+  }
+
+  gainTrait(personality: PersonalityState, traitId: string, traits: readonly Trait[]): PersonalityState {
+    if (!this.canGainTrait(personality, traitId, traits)) {
+      return personality;
+    }
+
+    const newTraits = [...personality.traits, traitId];
+    const newCorruption = this.calculateCorruption({ ...personality, traits: newTraits }, traits);
+
+    return {
+      traits: newTraits,
+      corruption: newCorruption,
+    };
+  }
+}
+```
+
+- [ ] **Step 6: Create personality index**
+
+```typescript
+// src/systems/personality/index.ts
+export type {
+  PersonalityService,
+  PersonalityState,
+  PersonalitySlice,
+  Trait,
+  TraitEffect,
+  TraitType,
+  TraitEffectsResult,
+} from './types';
+export { emptyPersonalityState } from './types';
+export { PersonalityServiceImpl } from './service';
+export { ALL_TRAITS, MAX_TRAITS_PER_HERO } from './traits';
+```
+
+- [ ] **Step 7: Run tests**
+
+Run: `npx vitest run tests/unit/systems/personality.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/systems/personality tests/unit/systems/personality.test.ts
+git commit -m "feat(systems): implement Personality system with traits"
+```
+
+---
+## Chunk 9.5: Heroes Plugin (Refactor from tick.ts)
+
+**Dependencies:** Chunk 1 (RNG), Chunk 2 (Pipeline Types)
+
+**Goal:** Extract hero processing logic from existing tick.ts into a plugin.
+
+**Files:**
+- Create: `src/domain/pipeline/plugins/heroes.plugin.ts`
+- Create: `tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
+
+- [ ] **Step 1: Read existing tick.ts to understand hero processing**
+
+Read: `src/time/tick.ts` - Identify hero-related logic (income, upgrades, etc.)
+
+- [ ] **Step 2: Write failing tests for Heroes Plugin**
+
+```typescript
+// tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts
+import { describe, it, expect } from 'vitest';
+import { createHeroesPlugin } from '../../../../../src/domain/pipeline/plugins/heroes.plugin';
+import type { TickContext } from '../../../../../src/domain/pipeline/types';
+import { SeededRng } from '../../../../../src/core/rng';
+import { createInitialState } from '../../../../../src/state/initial';
+
+describe('HeroesPlugin', () => {
+  it('processes hero income on tick', () => {
+    const plugin = createHeroesPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    // Add a hero to roster
+    const stateWithHero = {
+      ...state,
+      heroes: {
+        ...state.heroes,
+        roster: {
+          ...state.heroes.roster,
+          'bard-1': { id: 'bard-1', level: 1, hiredAt: Date.now() },
+        },
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithHero,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    // Gold should increase
+    expect(result.state.wallet.gold).toBeGreaterThan(stateWithHero.wallet.gold);
+  });
+
+  it('applies income multipliers from world state', () => {
+    const plugin = createHeroesPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    // Set storm weather (reduces income)
+    const stateWithWeather = {
+      ...state,
+      world: { ...state.world, weather: 'storm' as const },
+      heroes: {
+        ...state.heroes,
+        roster: {
+          'bard-1': { id: 'bard-1', level: 1, hiredAt: Date.now() },
+        },
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithWeather,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    // Gold increase should be reduced by storm modifier
+    expect(result.state.wallet.gold).toBeDefined();
+  });
+
+  it('has correct plugin order', () => {
+    const plugin = createHeroesPlugin();
+
+    expect(plugin.order).toBe(400); // PLUGIN_ORDER.HEROES
+  });
+
+  it('emits income events', () => {
+    const plugin = createHeroesPlugin();
+    const state = createInitialState(Date.now(), 12345);
+
+    const stateWithHero = {
+      ...state,
+      heroes: {
+        ...state.heroes,
+        roster: {
+          'bard-1': { id: 'bard-1', level: 1, hiredAt: Date.now() },
+        },
+      },
+    };
+
+    const ctx: TickContext = {
+      state: stateWithHero,
+      rng: new SeededRng(12345),
+      now: Date.now(),
+      accumulatedEvents: [],
+    };
+
+    const result = plugin.process(ctx);
+
+    const incomeEvents = result.events.filter(e => e.type === 'GOLD_EARNED');
+    expect(incomeEvents.length).toBeGreaterThan(0);
+  });
+});
+```
+
+- [ ] **Step 3: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
+Expected: FAIL with "Cannot find module"
+
+- [ ] **Step 4: Create Heroes Plugin implementation**
+
+```typescript
+// src/domain/pipeline/plugins/heroes.plugin.ts
+import type { TickPlugin, TickContext, TickResult } from '../types';
+import { PLUGIN_ORDER } from '../types';
+import { calculateIncome } from '../../../economy/income';
+import { WEATHER_MODIFIERS } from '../../../systems/world/constants';
+import type { DomainEvent } from '../../../types';
+
+export function createHeroesPlugin(): TickPlugin {
+  return {
+    name: 'heroes',
+    order: PLUGIN_ORDER.HEROES,
+
+    process(ctx: TickContext): TickResult {
+      const state = ctx.state;
+      const events: DomainEvent[] = [];
+
+      // Get world modifiers
+      const weatherMod = WEATHER_MODIFIERS[state.world.weather] || { income: 1.0 };
+      const incomeMultiplier = weatherMod.income;
+
+      // Calculate income from heroes
+      const heroes = Object.values(state.heroes.roster);
+      if (heroes.length === 0) {
+        return { state, events };
+      }
+
+      const baseIncome = calculateIncome(heroes, state.tavern);
+      const adjustedIncome = Math.floor(baseIncome * incomeMultiplier);
+
+      // Apply income
+      const newGold = state.wallet.gold + adjustedIncome;
+
+      events.push({
+        type: 'GOLD_EARNED',
+        amount: adjustedIncome,
+        source: 'hero_income',
+        timestamp: ctx.now,
+      });
+
+      return {
+        state: {
+          ...state,
+          wallet: { ...state.wallet, gold: newGold },
+        },
+        events,
+      };
+    },
+  };
+}
+```
+
+- [ ] **Step 5: Run tests**
+
+Run: `npx vitest run tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts`
+Expected: All tests PASS
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/domain/pipeline/plugins/heroes.plugin.ts tests/unit/domain/pipeline/plugins/heroes.plugin.test.ts
+git commit -m "feat(pipeline): add Heroes plugin for income processing"
+```
+
 ---
 ## Chunk 10: Pipeline Integration
-> **Dependencies:** Chunks 1-9 (all systems)
-> **Goal:** Integrate all systems into main tick pipeline
-> **Files:**
-> - Modify: `src/time/tick.ts` (refactor to use pipeline)
-> - Create: `src/domain/handlers/tick.handler.ts`
-> - Modify: `src/reducer/handlers.ts` (use new handlers)
-> - Create: `src/state/migrations.ts` (add v0.1.0 → v0.2.0 migration)
-> - Create: `tests/integration/tick-pipeline.test.ts`
-> - Run: all tests
-> - Commit
+
+**Dependencies:** Chunks 1-9 (all systems complete)
+
+**Goal:** Integrate all systems into main tick pipeline and refactor handlers.
+
+**Files:**
+- Modify: `src/time/tick.ts` (refactor to use pipeline)
+- Create: `src/domain/handlers/tick.handler.ts`
+- Modify: `src/reducer/handlers.ts` (delegate to new handlers)
+- Create: `src/state/migrations.ts` (add v0.1.0 → v0.2.0 migration)
+- Create: `tests/integration/tick-pipeline.test.ts`
+
+- [ ] **Step 1: Write integration test**
+
+```typescript
+// tests/integration/tick-pipeline.test.ts
+import { describe, it, expect } from 'vitest';
+import { createTickPipeline } from '../../src/domain/pipeline';
+import { PLUGIN_ORDER } from '../../src/domain/pipeline/types';
+import { SeededRng } from '../../src/core/rng';
+import { createInitialState } from '../../src/state/initial';
+import { createDirectorPlugin } from '../../src/domain/pipeline/plugins/director.plugin';
+import { createHeroesPlugin } from '../../src/domain/pipeline/plugins/heroes.plugin';
+import { createAdventuresPlugin } from '../../src/domain/pipeline/plugins/adventures.plugin';
+import { createWorldPlugin } from '../../src/domain/pipeline/plugins/world.plugin';
+
+describe('Tick Pipeline Integration', () => {
+  it('processes full pipeline with all plugins', () => {
+    const plugins = [
+      createDirectorPlugin(),
+      createHeroesPlugin(),
+      createAdventuresPlugin(),
+      createWorldPlugin(),
+    ];
+
+    const pipeline = createTickPipeline(plugins);
+    const state = createInitialState(Date.now(), 12345);
+    const rng = new SeededRng(12345);
+
+    const result = pipeline.process({
+      state,
+      rng,
+      now: Date.now(),
+      accumulatedEvents: [],
+    });
+
+    expect(result.state).toBeDefined();
+    expect(result.events).toBeDefined();
+  });
+
+  it('maintains plugin order', () => {
+    const plugins = [
+      createHeroesPlugin(),      // order: 400
+      createDirectorPlugin(),    // order: 300
+      createWorldPlugin(),       // order: 600
+      createAdventuresPlugin(),  // order: 500
+    ];
+
+    const pipeline = createTickPipeline(plugins);
+
+    expect(pipeline.plugins[0].order).toBe(PLUGIN_ORDER.DIRECTOR);
+    expect(pipeline.plugins[1].order).toBe(PLUGIN_ORDER.HEROES);
+    expect(pipeline.plugins[2].order).toBe(PLUGIN_ORDER.ADVENTURES);
+    expect(pipeline.plugins[3].order).toBe(PLUGIN_ORDER.WORLD);
+  });
+
+  it('produces deterministic results for same seed', () => {
+    const plugins1 = [createDirectorPlugin(), createHeroesPlugin()];
+    const plugins2 = [createDirectorPlugin(), createHeroesPlugin()];
+
+    const pipeline1 = createTickPipeline(plugins1);
+    const pipeline2 = createTickPipeline(plugins2);
+
+    const state = createInitialState(Date.now(), 99999);
+
+    const result1 = pipeline1.process({
+      state,
+      rng: new SeededRng(99999),
+      now: Date.now(),
+      accumulatedEvents: [],
+    });
+
+    const result2 = pipeline2.process({
+      state,
+      rng: new SeededRng(99999),
+      now: Date.now(),
+      accumulatedEvents: [],
+    });
+
+    expect(result1.state.director.visitors.length).toBe(result2.state.director.visitors.length);
+  });
+});
 ```
-- [ ] **Steps 1-7**: Create pipeline, integrate systems, update handlers, add migration, test
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/integration/tick-pipeline.test.ts`
+Expected: FAIL (plugins not yet integrated)
+
+- [ ] **Step 3: Create tick.handler.ts**
+
+```typescript
+// src/domain/handlers/tick.handler.ts
+import type { GameState, DomainEvent } from '../../types';
+import { createTickPipeline, PLUGIN_ORDER } from '../pipeline';
+import type { TickPlugin, TickContext } from '../pipeline/types';
+import { SeededRng } from '../../core/rng';
+import { createDirectorPlugin } from '../pipeline/plugins/director.plugin';
+import { createHeroesPlugin } from '../pipeline/plugins/heroes.plugin';
+
+export interface TickHandlerResult {
+  state: GameState;
+  events: readonly DomainEvent[];
+}
+
+export function handleTick(
+  state: GameState,
+  count: number,
+  now: number
+): TickHandlerResult {
+  const rng = new SeededRng(state.meta.seed);
+
+  // Build plugins list
+  const plugins: TickPlugin[] = [
+    createDirectorPlugin(),
+    createHeroesPlugin(),
+  ];
+
+  const pipeline = createTickPipeline(plugins);
+  let currentState = state;
+  let allEvents: DomainEvent[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const ctx: TickContext = {
+      state: currentState,
+      rng,
+      now: now + (i * 40), // 40ms per tick
+      accumulatedEvents: allEvents,
+    };
+
+    const result = pipeline.process(ctx);
+    currentState = result.state;
+    allEvents = [...allEvents, ...result.events];
+  }
+
+  return { state: currentState, events: allEvents };
+}
+```
+
+- [ ] **Step 4: Create state migration**
+
+```typescript
+// src/state/migrations.ts
+import { SCHEMA_VERSION } from '../types';
+import type { GameState } from '../types';
+import { emptyDirectorState } from '../systems/director';
+import { emptyAdventureState } from '../systems/adventure';
+import { emptyWorldState } from '../systems/world';
+import { emptyEventLogState } from '../systems/event-log';
+
+interface Migration {
+  fromVersion: string;
+  toVersion: string;
+  migrate(state: unknown): GameState;
+}
+
+const migrations: Migration[] = [
+  {
+    fromVersion: '0.1.0',
+    toVersion: '0.2.0',
+    migrate(state: unknown): GameState {
+      const oldState = state as Record<string, unknown>;
+      return {
+        ...(oldState as Omit<GameState, 'director' | 'adventures' | 'world' | 'eventLog' | 'personality'>),
+        meta: { ...(oldState.meta as object), version: '0.2.0' },
+        director: emptyDirectorState(),
+        adventures: emptyAdventureState(),
+        world: emptyWorldState(),
+        eventLog: emptyEventLogState(),
+        personality: { heroPersonalities: {} },
+      };
+    },
+  },
+];
+
+export function migrateState(state: unknown, targetVersion: string): GameState {
+  let current = (state as { meta?: { version?: string } }).meta?.version || '0.1.0';
+  let currentState = state;
+
+  while (current !== targetVersion) {
+    const migration = migrations.find(m => m.fromVersion === current);
+    if (!migration) {
+      throw new Error(`No migration from version ${current} to ${targetVersion}`);
+    }
+    currentState = migration.migrate(currentState);
+    current = migration.toVersion;
+  }
+
+  return currentState as GameState;
+}
+```
+
+- [ ] **Step 5: Update handlers.ts to use new tick handler**
+
+Read the current handlers.ts to understand its structure, then refactor:
+
+```typescript
+// src/reducer/handlers.ts (modified sections)
+import { handleTick } from '../domain/handlers/tick.handler';
+
+// In the reducer, delegate TICK actions:
+case 'TICK': {
+  const count = action.count ?? 1;
+  const result = handleTick(state, count, action.now ?? Date.now());
+  return result.state;
+}
+```
+
+- [ ] **Step 6: Run all tests**
+
+Run: `npx vitest run`
+Expected: All tests PASS (existing + new)
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/domain/handlers src/state/migrations.ts src/reducer/handlers.ts tests/integration
+git commit -m "feat: integrate tick pipeline with all systems and add state migration"
+```
+
 ---
 ## Chunk 11: CLI Extensions
-> **Dependencies:** Chunk 10 (Pipeline Integration)
-> **Files:**
-> - Modify: `src/cli/commands.ts` (add adventure, log, events, world commands)
-> - Modify: `src/cli/index.ts` (add command handlers)
-> - Modify: `src/cli/display.ts` (add formatters)
-> - Create: `tests/unit/cli/new-commands.test.ts`
-> - Run: tests
-> - Commit
+
+**Dependencies:** Chunk 10 (Pipeline Integration)
+
+**Files:**
+- Modify: `src/cli/commands.ts`
+- Modify: `src/cli/index.ts`
+- Modify: `src/cli/display.ts`
+- Create: `tests/unit/cli/commands.test.ts`
+
+- [ ] **Step 1: Write failing tests for new commands**
+
+```typescript
+// tests/unit/cli/commands.test.ts
+import { describe, it, expect } from 'vitest';
+import { parseCommand } from '../../../src/cli/commands';
+
+describe('CLI Commands - New Commands', () => {
+  describe('log command', () => {
+    it('parses basic log command', () => {
+      const result = parseCommand('log');
+
+      expect(result.type).toBe('LOG');
+    });
+
+    it('parses log with type filter', () => {
+      const result = parseCommand('log --type hero_hired');
+
+      expect(result.type).toBe('LOG');
+      expect(result.filter?.types).toContain('hero_hired');
+    });
+
+    it('parses log with limit', () => {
+      const result = parseCommand('log --limit 10');
+
+      expect(result.type).toBe('LOG');
+      expect(result.filter?.limit).toBe(10);
+    });
+  });
+
+  describe('events command', () => {
+    it('parses events command', () => {
+      const result = parseCommand('events');
+
+      expect(result.type).toBe('EVENTS');
+    });
+
+    it('parses events with limit', () => {
+      const result = parseCommand('events 20');
+
+      expect(result.type).toBe('EVENTS');
+      expect(result.limit).toBe(20);
+    });
+  });
+
+  describe('notifications command', () => {
+    it('parses notifications command', () => {
+      const result = parseCommand('notifications');
+
+      expect(result.type).toBe('NOTIFICATIONS');
+    });
+
+    it('parses notifications --all flag', () => {
+      const result = parseCommand('notifications --all');
+
+      expect(result.type).toBe('NOTIFICATIONS');
+      expect(result.showRead).toBe(true);
+    });
+  });
+
+  describe('mark-read command', () => {
+    it('parses mark-read with ids', () => {
+      const result = parseCommand('mark-read notif-1 notif-2');
+
+      expect(result.type).toBe('MARK_READ');
+      expect(result.ids).toEqual(['notif-1', 'notif-2']);
+    });
+  });
+
+  describe('world command', () => {
+    it('parses world status command', () => {
+      const result = parseCommand('world');
+
+      expect(result.type).toBe('WORLD');
+    });
+  });
+});
 ```
-- [ ] **Steps 1-6**: Add commands, handlers, formatters, test
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/unit/cli/commands.test.ts`
+Expected: FAIL with "LOG" not recognized
+
+- [ ] **Step 3: Update commands.ts with new command types**
+
+```typescript
+// Add to src/cli/commands.ts
+
+export interface LogCommand extends ParsedCommandBase {
+  readonly type: 'LOG';
+  readonly filter?: EventFilter;
+}
+
+export interface EventsCommand extends ParsedCommandBase {
+  readonly type: 'EVENTS';
+  readonly limit?: number;
+}
+
+export interface NotificationsCommand extends ParsedCommandBase {
+  readonly type: 'NOTIFICATIONS';
+  readonly showRead?: boolean;
+}
+
+export interface MarkReadCommand extends ParsedCommandBase {
+  readonly type: 'MARK_READ';
+  readonly ids: readonly string[];
+}
+
+export interface WorldCommand extends ParsedCommandBase {
+  readonly type: 'WORLD';
+}
+
+export interface EventFilter {
+  readonly since?: number;
+  readonly until?: number;
+  readonly types?: readonly string[];
+  readonly limit?: number;
+}
+
+// Update parseCommand function to handle new commands:
+// Add cases for 'log', 'events', 'notifications', 'mark-read', 'world'
+```
+
+- [ ] **Step 4: Update CLI index.ts with new command handlers**
+
+```typescript
+// Add to src/cli/index.ts
+
+case 'LOG': {
+  const logState = state.eventLog;
+  const filter = cmd.filter || {};
+  const entries = eventLogService.query(filter, logState);
+  display.displayLogEntries(entries);
+  break;
+}
+
+case 'EVENTS': {
+  const limit = cmd.limit ?? 50;
+  const entries = state.eventLog.entries.slice(-limit);
+  display.displayLogEntries(entries);
+  break;
+}
+
+case 'NOTIFICATIONS': {
+  const notifications = cmd.showRead
+    ? state.eventLog.notifications
+    : eventLogService.getUnread(state.eventLog);
+  display.displayNotifications(notifications);
+  break;
+}
+
+case 'MARK_READ': {
+  const newState = eventLogService.markRead(cmd.ids, state.eventLog);
+  return { ...state, eventLog: newState };
+}
+
+case 'WORLD': {
+  display.displayWorldState(state.world);
+  break;
+}
+```
+
+- [ ] **Step 5: Add display formatters**
+
+```typescript
+// Add to src/cli/display.ts
+
+displayLogEntries(entries: readonly LogEntry[]): void {
+  if (entries.length === 0) {
+    console.log('No events found.');
+    return;
+  }
+
+  console.log(`\n📜 Event Log (${entries.length} entries)\n`);
+  for (const entry of entries) {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    console.log(`  [${time}] ${entry.type}: ${JSON.stringify(entry.data)}`);
+  }
+}
+
+displayNotifications(notifications: readonly Notification[]): void {
+  if (notifications.length === 0) {
+    console.log('No notifications.');
+    return;
+  }
+
+  console.log(`\n🔔 Notifications (${notifications.length})\n`);
+  for (const n of notifications) {
+    const icon = n.type === 'success' ? '✅' : n.type === 'warning' ? '⚠️' : 'ℹ️';
+    const read = n.isRead ? '' : ' (unread)';
+    console.log(`  ${icon} ${n.title}${read}`);
+    console.log(`     ${n.message}`);
+  }
+}
+
+displayWorldState(world: WorldState): void {
+  console.log(`\n🌍 World State`);
+  console.log(`  Day ${world.dayNumber} - ${world.timeOfDay}`);
+  console.log(`  Weather: ${world.weather}`);
+  if (world.activeEvents.length > 0) {
+    console.log(`  Active Events: ${world.activeEvents.map(e => e.type).join(', ')}`);
+  }
+}
+```
+
+- [ ] **Step 6: Run all tests**
+
+Run: `npx vitest run`
+Expected: All tests PASS
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/cli tests/unit/cli
+git commit -m "feat(cli): add log, events, notifications, world commands"
+```
+
 ---
 ## Chunk 12: Final Integration & Testing
-> **Dependencies:** Chunks 1-11
-> **Files:**
-> - Create: `tests/integration/full-pipeline.test.ts`
-> - Create: `tests/integration/save-load-migration.test.ts`
-> - Run: all tests
-> - Commit
+
+**Dependencies:** Chunks 1-11
+
+**Goal:** Comprehensive integration testing and verification.
+
+**Files:**
+- Create: `tests/integration/full-game-loop.test.ts`
+- Create: `tests/integration/save-load-migration.test.ts`
+
+- [ ] **Step 1: Write full game loop integration test**
+
+```typescript
+// tests/integration/full-game-loop.test.ts
+import { describe, it, expect } from 'vitest';
+import { createInitialState } from '../../src/state/initial';
+import { handleTick } from '../../src/domain/handlers/tick.handler';
+import { handleUpgradeHero } from '../../src/domain/handlers/upgrade.handler';
+import { handleOffline } from '../../src/domain/handlers/offline.handler';
+
+describe('Full Game Loop Integration', () => {
+  it('simulates 100 ticks without errors', () => {
+    let state = createInitialState(Date.now(), 42);
+
+    for (let i = 0; i < 100; i++) {
+      const result = handleTick(state, 1, Date.now() + i * 40);
+      state = result.state;
+    }
+
+    expect(state.time.tickCount).toBe(100);
+    expect(state.director).toBeDefined();
+    expect(state.world).toBeDefined();
+  });
+
+  it('handles upgrade + tick sequence', () => {
+    let state = createInitialState(Date.now(), 12345);
+
+    // Upgrade a hero
+    const upgradeResult = handleUpgradeHero(state, 'bard-1', 1, Date.now());
+    state = upgradeResult.state;
+
+    // Run ticks
+    const tickResult = handleTick(state, 10, Date.now());
+    state = tickResult.state;
+
+    expect(state.heroes.roster['bard-1'].level).toBeGreaterThan(1);
+  });
+
+  it('handles offline progress', () => {
+    let state = createInitialState(Date.now(), 54321);
+
+    // Simulate being offline for 1 hour
+    const now = Date.now();
+    const lastSeen = now - (60 * 60 * 1000);
+
+    state = {
+      ...state,
+      meta: { ...state.meta, lastSeenAtMs: lastSeen },
+    };
+
+    const result = handleOffline(state, now);
+    state = result.state;
+
+    // Should have progressed
+    expect(state.meta.lastSeenAtMs).toBe(now);
+  });
+
+  it('maintains state consistency across operations', () => {
+    let state = createInitialState(Date.now(), 999);
+
+    // Series of operations
+    state = handleTick(state, 5, Date.now()).state;
+    state = handleUpgradeHero(state, 'bard-1', 2, Date.now()).state;
+    state = handleTick(state, 10, Date.now()).state;
+    state = handleUpgradeHero(state, 'barkeep-1', 1, Date.now()).state;
+    state = handleTick(state, 20, Date.now()).state;
+
+    // Verify state integrity
+    expect(state.meta).toBeDefined();
+    expect(state.wallet).toBeDefined();
+    expect(state.tavern).toBeDefined();
+    expect(state.heroes).toBeDefined();
+    expect(state.time).toBeDefined();
+    expect(state.director).toBeDefined();
+    expect(state.adventures).toBeDefined();
+    expect(state.world).toBeDefined();
+    expect(state.eventLog).toBeDefined();
+    expect(state.personality).toBeDefined();
+  });
+});
 ```
-- [ ] **Steps 1-4**: Write integration tests, run all tests, commit
+
+- [ ] **Step 2: Write save/load migration test**
+
+```typescript
+// tests/integration/save-load-migration.test.ts
+import { describe, it, expect } from 'vitest';
+import { migrateState } from '../../src/state/migrations';
+import { createInitialState } from '../../src/state/initial';
+
+describe('State Migration', () => {
+  it('migrates v0.1.0 state to v0.2.0', () => {
+    // Old state without new slices
+    const oldState = {
+      meta: { version: '0.1.0', seed: 12345, lastSeenAtMs: Date.now() },
+      wallet: { gold: 1000 },
+      tavern: { reputation: 0 },
+      heroes: { roster: {} },
+      time: { tickCount: 0, lastTickAtMs: Date.now() },
+    };
+
+    const migrated = migrateState(oldState, '0.2.0');
+
+    expect(migrated.meta.version).toBe('0.2.0');
+    expect(migrated.director).toBeDefined();
+    expect(migrated.adventures).toBeDefined();
+    expect(migrated.world).toBeDefined();
+    expect(migrated.eventLog).toBeDefined();
+    expect(migrated.personality).toBeDefined();
+  });
+
+  it('preserves existing data during migration', () => {
+    const oldState = {
+      meta: { version: '0.1.0', seed: 12345, lastSeenAtMs: Date.now() },
+      wallet: { gold: 5000 },
+      tavern: { reputation: 100 },
+      heroes: { roster: { 'bard-1': { id: 'bard-1', level: 5 } } },
+      time: { tickCount: 42, lastTickAtMs: Date.now() },
+    };
+
+    const migrated = migrateState(oldState, '0.2.0');
+
+    expect(migrated.wallet.gold).toBe(5000);
+    expect(migrated.tavern.reputation).toBe(100);
+    expect(migrated.heroes.roster['bard-1'].level).toBe(5);
+    expect(migrated.time.tickCount).toBe(42);
+  });
+
+  it('throws for unknown version', () => {
+    const state = { meta: { version: '0.0.1' } };
+
+    expect(() => migrateState(state, '0.2.0')).toThrow('No migration from version 0.0.1');
+  });
+});
+```
+
+- [ ] **Step 3: Run all tests**
+
+Run: `npx vitest run`
+Expected: All tests PASS
+
+- [ ] **Step 4: Run full test suite with coverage**
+
+Run: `npx vitest run --coverage`
+Expected: 90%+ coverage on new systems
+
+- [ ] **Step 5: Final commit**
+
+```bash
+git add tests/integration
+git commit -m "test: add comprehensive integration tests for full game loop"
+```
+
+- [ ] **Step 6: Create summary**
+
+The implementation is complete. Summary of changes:
+
+**New Systems:**
+- `src/core/rng/` - SeededRng with streams
+- `src/domain/pipeline/` - TickPipeline with plugins
+- `src/systems/director/` - Visitor spawning and lifecycle
+- `src/systems/adventure/` - Adventure creation, progress, loot
+- `src/systems/world/` - Time, weather, world events
+- `src/systems/event-log/` - Event logging and notifications
+- `src/systems/personality/` - Hero traits and corruption
+
+**Refactored:**
+- `src/reducer/handlers.ts` - Delegates to new handlers
+- `src/state/migrations.ts` - v0.1.0 → v0.2.0 migration
+- `src/cli/` - New commands (log, events, notifications, world)
+
+**Tests:**
+- Unit tests for all systems
+- Integration tests for pipeline
+- Migration tests
+
 ---
 

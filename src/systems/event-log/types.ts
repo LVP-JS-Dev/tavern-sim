@@ -4,21 +4,14 @@
  * Will be expanded in Chunk 8
  */
 export type LogEventType =
-  | 'hero_hired'
-  | 'hero_upgraded'
-  | 'visitor_arrived'
-  | 'visitor_departed'
-  | 'adventure_started'
-  | 'adventure_completed'
-  | 'adventure_failed'
-  | 'loot_obtained'
-  | 'gold_earned'
-  | 'world_event';
+  | 'hero_hired' | 'hero_upgraded' | 'visitor_arrived' | 'visitor_departed'
+  | 'adventure_started' | 'adventure_completed' | 'adventure_failed'
+  | 'loot_obtained' | 'gold_earned' | 'world_event' | 'personality_changed';
 
 export interface LogEntry {
   readonly id: string;
   readonly timestamp: number;
-  readonly type: LogEventType;
+  readonly type: LogEventType | string;
   readonly data: Record<string, unknown>;
 }
 
@@ -44,3 +37,22 @@ export const emptyEventLogState = (): EventLogState => ({
   lastReadAt: 0,
   maxEntries: 100,
 });
+
+export interface EventLogSlice {
+  readonly eventLog: EventLogState;
+}
+
+export interface EventFilter {
+  readonly since?: number;
+  readonly until?: number;
+  readonly types?: readonly string[];
+  readonly limit?: number;
+}
+
+export interface EventLogService {
+  append(entry: LogEntry, state: EventLogState): EventLogState;
+  query(filter: EventFilter, state: EventLogState): readonly LogEntry[];
+  getUnread(state: EventLogState): readonly Notification[];
+  markRead(ids: readonly string[], timestamp: number, state: EventLogState): EventLogState;
+  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, id: string, timestamp: number, state: EventLogState): EventLogState;
+}

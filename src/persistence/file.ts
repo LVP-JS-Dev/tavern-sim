@@ -12,6 +12,9 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import type { GameState } from "../types";
 import { StorageError, type Storage } from "./storage";
+
+// Re-export Storage type for convenience
+export type { Storage } from "./storage";
 import { serializeState, deserializeState } from "../state/serialize";
 
 // ============================================================================
