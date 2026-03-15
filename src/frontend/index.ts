@@ -50,13 +50,13 @@ export function initGame(): void {
   console.log('[Frontend] Game initialized');
 }
 
-function applyOfflineProgress(state: any): any {
+function applyOfflineProgress(state: GameState): GameState {
   const now = Date.now();
   const lastSeen = state.meta.lastSeenAtMs;
 
   // Calculate total income from heroes
   const incomePerSecondU = Object.values(state.heroes.roster).reduce(
-    (sum: number, hero: any) => sum + (hero.incomePerSecondU ?? 0),
+    (sum, hero) => sum + (hero.incomePerSecondU ?? 0),
     0
   ) as GoldU;
 
