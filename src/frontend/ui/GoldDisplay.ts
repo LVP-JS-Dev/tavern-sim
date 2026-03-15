@@ -42,7 +42,7 @@ export class GoldDisplay extends Phaser.GameObjects.Container {
     const displayIncome = (incomePerSecond / GOLD_MULTIPLIER).toFixed(1);
 
     this.goldText.setText(this.formatNumber(displayGold));
-    this.incomeText.setText(`+${displayIncome}/сек`);
+    this.incomeText.setText(`+${displayIncome}/sec`);
   }
 
   private formatNumber(num: number): string {

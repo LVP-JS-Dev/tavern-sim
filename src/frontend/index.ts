@@ -7,6 +7,9 @@ import type { StateBridge } from './bridge';
 import type { GoldU } from '../types/state';
 import type { GameState } from '../types';
 
+// Re-export sprite keys for use in entities
+export { SPRITE_KEYS } from './scenes/BootScene';
+
 // Global bridge instance
 let bridge: StateBridge | null = null;
 

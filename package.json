@@ -10,6 +10,7 @@
     "dev:web": "vite",
     "build:web": "vite build",
     "preview:web": "vite preview",
+    "copy-assets": "tsx scripts/copy-assets.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc",

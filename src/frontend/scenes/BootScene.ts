@@ -1,4 +1,26 @@
 import Phaser from 'phaser';
+import { ASSETS } from '../config';
+
+/** Asset keys for sprites */
+export const SPRITE_KEYS = {
+  // Environment
+  TABLE: 'table',
+  CHAIR: 'chair',
+  // Background
+  FLOOR: 'floor',
+  // Visitors
+  VISITOR_02: 'visitor-02',
+  VISITOR_03: 'visitor-03',
+  VISITOR_04: 'visitor-04',
+  // Heroes
+  BARD: 'bard',
+  WARRIOR: 'warrior',
+  MAGE: 'mage',
+  ROGUE: 'rogue',
+  // UI
+  ICON_GOLD: 'icon-gold',
+  BUTTON_PRIMARY: 'button-primary',
+} as const;
 
 export class BootScene extends Phaser.Scene {
   private progressBar!: Phaser.GameObjects.Graphics;
@@ -11,7 +33,33 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     this.createLoadingUI();
     this.setupLoadEvents();
-    // Assets will be added in Chunk 7
+    this.loadAssets();
+  }
+
+  private loadAssets(): void {
+    const sprites = ASSETS.SPRITES;
+
+    // Environment
+    this.load.image(SPRITE_KEYS.TABLE, `${sprites}/env/table.png`);
+    this.load.image(SPRITE_KEYS.CHAIR, `${sprites}/env/chair.png`);
+
+    // Background
+    this.load.image(SPRITE_KEYS.FLOOR, `${sprites}/bg/floor.png`);
+
+    // Visitors
+    this.load.image(SPRITE_KEYS.VISITOR_02, `${sprites}/visitors/visitor-02-idle.png`);
+    this.load.image(SPRITE_KEYS.VISITOR_03, `${sprites}/visitors/visitor-03-idle.png`);
+    this.load.image(SPRITE_KEYS.VISITOR_04, `${sprites}/visitors/visitor-04-idle.png`);
+
+    // Heroes
+    this.load.image(SPRITE_KEYS.BARD, `${sprites}/heroes/bard-idle.png`);
+    this.load.image(SPRITE_KEYS.WARRIOR, `${sprites}/heroes/warrior-idle.png`);
+    this.load.image(SPRITE_KEYS.MAGE, `${sprites}/heroes/mage-idle.png`);
+    this.load.image(SPRITE_KEYS.ROGUE, `${sprites}/heroes/rogue-idle.png`);
+
+    // UI
+    this.load.image(SPRITE_KEYS.ICON_GOLD, `${sprites}/ui/icon-gold.png`);
+    this.load.image(SPRITE_KEYS.BUTTON_PRIMARY, `${sprites}/ui/button-primary.png`);
   }
 
   private createLoadingUI(): void {

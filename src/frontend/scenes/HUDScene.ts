@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { getBridge } from '../index';
-import { CANVAS_WIDTH } from '../config';
 import { GoldDisplay } from '../ui/GoldDisplay';
 import type { StateBridge } from '../bridge/types';
 import type { GameState, GoldU } from '../../types';
