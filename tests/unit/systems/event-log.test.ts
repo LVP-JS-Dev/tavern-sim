@@ -85,10 +85,12 @@ describe('EventLogSystem', () => {
         title: 'Test',
         message: 'Test message',
         isRead: false,
-      }, state);
+      }, 'notif-1', 1000, state);
 
       expect(newState.notifications).toHaveLength(1);
       expect(newState.notifications[0].title).toBe('Test');
+      expect(newState.notifications[0].id).toBe('notif-1');
+      expect(newState.notifications[0].timestamp).toBe(1000);
     });
 
     it('gets unread notifications', () => {
@@ -115,10 +117,11 @@ describe('EventLogSystem', () => {
         ],
       };
 
-      const newState = service.markRead(['n1'], state);
+      const newState = service.markRead(['n1'], 3000, state);
 
       expect(newState.notifications[0].isRead).toBe(true);
       expect(newState.notifications[1].isRead).toBe(false);
+      expect(newState.lastReadAt).toBe(3000);
     });
   });
 });

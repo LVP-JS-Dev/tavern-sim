@@ -53,6 +53,6 @@ export interface EventLogService {
   append(entry: LogEntry, state: EventLogState): EventLogState;
   query(filter: EventFilter, state: EventLogState): readonly LogEntry[];
   getUnread(state: EventLogState): readonly Notification[];
-  markRead(ids: readonly string[], state: EventLogState): EventLogState;
-  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, state: EventLogState): EventLogState;
+  markRead(ids: readonly string[], timestamp: number, state: EventLogState): EventLogState;
+  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, id: string, timestamp: number, state: EventLogState): EventLogState;
 }

@@ -36,24 +36,23 @@ export class EventLogServiceImpl implements EventLogService {
     return state.notifications.filter(n => !n.isRead);
   }
 
-  markRead(ids: readonly string[], state: EventLogState): EventLogState {
+  markRead(ids: readonly string[], timestamp: number, state: EventLogState): EventLogState {
     const idSet = new Set(ids);
-    const now = Date.now();
 
     return {
       ...state,
-      lastReadAt: now,
+      lastReadAt: timestamp,
       notifications: state.notifications.map(n =>
         idSet.has(n.id) ? { ...n, isRead: true } : n
       ),
     };
   }
 
-  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, state: EventLogState): EventLogState {
+  createNotification(input: Omit<Notification, 'id' | 'timestamp'>, id: string, timestamp: number, state: EventLogState): EventLogState {
     const notification: Notification = {
       ...input,
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: Date.now(),
+      id,
+      timestamp,
     };
 
     return {
