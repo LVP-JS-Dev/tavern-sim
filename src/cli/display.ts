@@ -575,3 +575,87 @@ export function formatEvents(events: readonly DomainEvent[]): string {
   const lines = events.map(formatEvent);
   return lines.join("\n");
 }
+
+// ============================================================================
+// EVENT LOG FORMATTING
+// ============================================================================
+
+import type { LogEntry } from "../systems/event-log/types";
+
+/**
+ * Format log entries for CLI display.
+ *
+ * @param entries - Array of log entries
+ * @returns Formatted log entries string
+ */
+export function formatLogEntries(entries: readonly LogEntry[]): string {
+  if (entries.length === 0) {
+    return "No events found.";
+  }
+
+  const lines: string[] = [];
+  lines.push(`\n📜 Event Log (${entries.length} entries)\n`);
+
+  for (const entry of entries) {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    lines.push(`  [${time}] ${entry.type}: ${JSON.stringify(entry.data)}`);
+  }
+
+  return lines.join("\n");
+}
+
+// ============================================================================
+// NOTIFICATION FORMATTING
+// ============================================================================
+
+import type { Notification } from "../systems/event-log/types";
+
+/**
+ * Format notifications for CLI display.
+ *
+ * @param notifications - Array of notifications
+ * @returns Formatted notifications string
+ */
+export function formatNotifications(notifications: readonly Notification[]): string {
+  if (notifications.length === 0) {
+    return "No notifications.";
+  }
+
+  const lines: string[] = [];
+  lines.push(`\n🔔 Notifications (${notifications.length})\n`);
+
+  for (const n of notifications) {
+    const icon = n.type === 'success' ? '✅' : n.type === 'warning' ? '⚠️' : 'ℹ️';
+    const read = n.isRead ? '' : ' (unread)';
+    lines.push(`  ${icon} ${n.title}${read}`);
+    lines.push(`     ${n.message}`);
+  }
+
+  return lines.join("\n");
+}
+
+// ============================================================================
+// WORLD STATE FORMATTING
+// ============================================================================
+
+import type { WorldState } from "../systems/world/types";
+
+/**
+ * Format world state for CLI display.
+ *
+ * @param world - World state
+ * @returns Formatted world state string
+ */
+export function formatWorldState(world: WorldState): string {
+  const lines: string[] = [];
+
+  lines.push(`\n🌍 World State`);
+  lines.push(`  Day ${world.dayNumber} - ${world.timeOfDay}`);
+  lines.push(`  Weather: ${world.weather}`);
+
+  if (world.activeEvents.length > 0) {
+    lines.push(`  Active Events: ${world.activeEvents.map(e => e.type).join(', ')}`);
+  }
+
+  return lines.join("\n");
+}
