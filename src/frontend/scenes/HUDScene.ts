@@ -19,7 +19,7 @@ export class HUDScene extends Phaser.Scene {
     this.bridge = getBridge();
 
     // Create gold display
-    this.goldDisplay = new GoldDisplay(this, 15, 30);
+    this.goldDisplay = new GoldDisplay(this, 10, 10);
 
     // Subscribe to state
     this.unsubscribe = this.bridge.subscribe((state) => {
@@ -34,7 +34,7 @@ export class HUDScene extends Phaser.Scene {
   }
 
   private createMenuButton(): void {
-    const button = this.add.text(CANVAS_WIDTH - 50, 30, '⚙️', {
+    const button = this.add.text(325, 10, '⚙️', {
       fontSize: '28px',
     });
     button.setOrigin(0.5, 0.5);
