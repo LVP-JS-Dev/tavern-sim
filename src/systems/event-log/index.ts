@@ -5,9 +5,13 @@
  * Will be expanded in Chunk 8.
  */
 export type {
-  LogEntry,
-  LogEventType,
-  Notification,
+  EventLogService,
   EventLogState,
+  EventLogSlice,
+  LogEntry,
+  Notification,
+  EventFilter,
+  LogEventType,
 } from './types';
 export { emptyEventLogState } from './types';
+export { EventLogServiceImpl } from './service';

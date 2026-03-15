@@ -1,72 +1,124 @@
-import { describe, it, expect } from 'vitest';
-import type { EventLogState, LogEntry, Notification, LogEventType } from '../../../src/systems/event-log/types';
+// tests/unit/systems/event-log.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { EventLogServiceImpl } from '../../../src/systems/event-log/service';
+import type { EventLogService, EventLogState, LogEntry, Notification, EventFilter } from '../../../src/systems/event-log/types';
+import { emptyEventLogState } from '../../../src/systems/event-log';
 
-describe('Event Log System Types', () => {
-  describe('EventLogState interface', () => {
-    it('should have required fields', () => {
-      const log: EventLogState = {
-        entries: [],
-        notifications: [],
-        lastReadAt: 0,
-        maxEntries: 100,
-      };
+describe('EventLogSystem', () => {
+  let service: EventLogService;
+  let state: EventLogState;
 
-      expect(log.entries).toEqual([]);
-      expect(log.notifications).toEqual([]);
-      expect(log.lastReadAt).toBe(0);
-      expect(log.maxEntries).toBe(100);
-    });
+  beforeEach(() => {
+    service = new EventLogServiceImpl();
+    state = emptyEventLogState();
   });
 
-  describe('LogEntry interface', () => {
-    it('should have required fields', () => {
+  describe('append', () => {
+    it('adds entry to log', () => {
       const entry: LogEntry = {
-        id: 'entry-1',
+        id: 'log-1',
         timestamp: Date.now(),
         type: 'hero_hired',
-        data: { heroId: 'hero-1', name: 'Alice' },
+        data: { heroId: 'bard-1' },
       };
 
-      expect(entry.id).toBe('entry-1');
-      expect(entry.type).toBe('hero_hired');
-      expect(entry.data.heroId).toBe('hero-1');
+      const newState = service.append(entry, state);
+
+      expect(newState.entries).toHaveLength(1);
+      expect(newState.entries[0]).toEqual(entry);
+    });
+
+    it('truncates old entries when max exceeded', () => {
+      state = { ...state, maxEntries: 3 };
+
+      for (let i = 0; i < 5; i++) {
+        state = service.append({
+          id: `log-${i}`,
+          timestamp: Date.now() + i,
+          type: 'hero_hired',
+          data: {},
+        }, state);
+      }
+
+      expect(state.entries.length).toBeLessThanOrEqual(3);
     });
   });
 
-  describe('Notification interface', () => {
-    it('should have required fields', () => {
-      const notification: Notification = {
-        id: 'notif-1',
-        timestamp: Date.now(),
-        type: 'success',
-        title: 'Adventure Complete',
-        message: 'Heroes returned with loot!',
-        isRead: false,
-      };
-
-      expect(notification.id).toBe('notif-1');
-      expect(notification.type).toBe('success');
-      expect(notification.title).toBe('Adventure Complete');
-      expect(notification.isRead).toBe(false);
-    });
-  });
-
-  describe('LogEventType type', () => {
-    it('should include all event types', () => {
-      const eventTypes: LogEventType[] = [
-        'hero_hired',
-        'hero_upgraded',
-        'visitor_arrived',
-        'visitor_departed',
-        'adventure_started',
-        'adventure_completed',
-        'adventure_failed',
-        'loot_obtained',
-        'gold_earned',
-        'world_event',
+  describe('query', () => {
+    beforeEach(() => {
+      const entries: LogEntry[] = [
+        { id: '1', timestamp: 1000, type: 'hero_hired', data: {} },
+        { id: '2', timestamp: 2000, type: 'visitor_arrived', data: {} },
+        { id: '3', timestamp: 3000, type: 'hero_hired', data: {} },
+        { id: '4', timestamp: 4000, type: 'adventure_started', data: {} },
       ];
+      state = { ...state, entries };
+    });
 
-      expect(eventTypes).toHaveLength(10);
+    it('filters by type', () => {
+      const filter: EventFilter = { types: ['hero_hired'] };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(e => e.type === 'hero_hired')).toBe(true);
+    });
+
+    it('filters by time range', () => {
+      const filter: EventFilter = { since: 1500, until: 3500 };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+    });
+
+    it('limits results', () => {
+      const filter: EventFilter = { limit: 2 };
+      const result = service.query(filter, state);
+
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('notifications', () => {
+    it('creates notification', () => {
+      const newState = service.createNotification({
+        type: 'info',
+        title: 'Test',
+        message: 'Test message',
+        isRead: false,
+      }, state);
+
+      expect(newState.notifications).toHaveLength(1);
+      expect(newState.notifications[0].title).toBe('Test');
+    });
+
+    it('gets unread notifications', () => {
+      state = {
+        ...state,
+        notifications: [
+          { id: 'n1', timestamp: 1000, type: 'info', title: 'A', message: 'a', isRead: true },
+          { id: 'n2', timestamp: 2000, type: 'success', title: 'B', message: 'b', isRead: false },
+        ],
+      };
+
+      const unread = service.getUnread(state);
+
+      expect(unread).toHaveLength(1);
+      expect(unread[0].id).toBe('n2');
+    });
+
+    it('marks notifications as read', () => {
+      state = {
+        ...state,
+        notifications: [
+          { id: 'n1', timestamp: 1000, type: 'info', title: 'A', message: 'a', isRead: false },
+          { id: 'n2', timestamp: 2000, type: 'success', title: 'B', message: 'b', isRead: false },
+        ],
+      };
+
+      const newState = service.markRead(['n1'], state);
+
+      expect(newState.notifications[0].isRead).toBe(true);
+      expect(newState.notifications[1].isRead).toBe(false);
     });
   });
 });
