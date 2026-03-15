@@ -18,4 +18,4 @@ export type {
 } from './types';
 export { emptyWorldState } from './types';
 export { WorldServiceImpl } from './service';
-export { TICKS_PER_TOD, WEATHER_MODIFIERS, EVENT_MODIFIERS } from './constants';
+export { TICKS_PER_TOD, WEATHER_MODIFIERS, EVENT_MODIFIERS, WEATHER_POOL } from './constants';

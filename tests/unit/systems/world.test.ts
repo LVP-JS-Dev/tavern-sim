@@ -26,29 +26,28 @@ describe('WorldSystem', () => {
       const result = service.update(ctx);
 
       // Time should advance
-      expect(result.state).toBeDefined();
+      expect(result.state.tickInDay).toBe(1); // Should have advanced by 1
+      expect(result.state.timeOfDay).toBe('dawn'); // Still dawn after 1 tick (need 10 ticks to change)
     });
 
     it('changes weather periodically', () => {
       const state = { ...emptyWorldState(), weather: 'clear' as const };
-      const ctx: WorldContext = {
-        state: { world: state },
-        rng,
-        now: Date.now(),
-      };
 
-      // Multiple updates may change weather
-      let currentWeather = state.weather;
-      for (let i = 0; i < 100; i++) {
+      // Track weather changes
+      const weatherHistory: string[] = [];
+
+      for (let i = 0; i < 200; i++) {
         const result = service.update({
-          ...ctx,
+          state: { world: state },
           rng: new SeededRng(i),
+          now: Date.now(),
         });
-        currentWeather = result.state.weather;
+        weatherHistory.push(result.state.weather);
       }
 
-      // Weather should have changed at least once
-      // (probabilistic, but very likely)
+      // Weather should have changed at least once (probabilistic but very likely with 200 ticks)
+      const uniqueWeathers = new Set(weatherHistory);
+      expect(uniqueWeathers.size).toBeGreaterThan(1);
     });
   });
 

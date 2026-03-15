@@ -27,3 +27,6 @@ export const EVENT_MODIFIERS: Record<WorldEventType, { income: number; visitors:
 
 /** Time of day progression */
 export const TOD_ORDER: TimeOfDay[] = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night', 'midnight'];
+
+/** Weighted weather pool for random selection */
+export const WEATHER_POOL: Weather[] = ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain', 'storm', 'snow'];

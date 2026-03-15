@@ -1,6 +1,6 @@
 // src/systems/world/service.ts
 import type { WorldService, WorldContext, WorldState, WorldModifiers, WorldUpdateResult, Weather } from './types';
-import { TICKS_PER_TOD, WEATHER_CHANGE_CHANCE, WEATHER_MODIFIERS, EVENT_MODIFIERS, TOD_ORDER } from './constants';
+import { TICKS_PER_TOD, WEATHER_CHANGE_CHANCE, WEATHER_MODIFIERS, EVENT_MODIFIERS, TOD_ORDER, WEATHER_POOL } from './constants';
 
 export class WorldServiceImpl implements WorldService {
   update(ctx: WorldContext): WorldUpdateResult {
@@ -49,9 +49,11 @@ export class WorldServiceImpl implements WorldService {
 
     for (const event of state.activeEvents) {
       const eventMod = EVENT_MODIFIERS[event.type];
-      incomeMultiplier *= eventMod.income;
-      visitorSpawnRate *= eventMod.visitors;
-      adventureSuccessBonus += eventMod.adventure;
+      if (eventMod) {
+        incomeMultiplier *= eventMod.income;
+        visitorSpawnRate *= eventMod.visitors;
+        adventureSuccessBonus += eventMod.adventure;
+      }
     }
 
     return { incomeMultiplier, visitorSpawnRate, adventureSuccessBonus };
@@ -62,7 +64,6 @@ export class WorldServiceImpl implements WorldService {
   }
 
   private rollWeather(stream: import('../../core/rng').RngStream): Weather {
-    const weathers: Weather[] = ['clear', 'clear', 'clear', 'cloudy', 'cloudy', 'rain', 'storm', 'snow'];
-    return stream.pick(weathers);
+    return stream.pick(WEATHER_POOL);
   }
 }
