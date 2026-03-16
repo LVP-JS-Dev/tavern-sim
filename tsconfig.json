@@ -44,7 +44,7 @@
     "isolatedModules": true,
 
     /* Language and Environment */
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "skipLibCheck": true,
 
     /* Path Mapping */

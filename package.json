@@ -7,6 +7,10 @@
   "scripts": {
     "dev": "tsx src/cli/index.ts",
     "cli": "tsx src/cli/index.ts",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "preview:web": "vite preview",
+    "copy-assets": "tsx scripts/copy-assets.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc",
@@ -25,12 +29,14 @@
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2",
+    "vite": "^6.2.0",
     "vitest": "^3.0.8"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "phaser": "^3.80.1",
     "tslib": "^2.8.1"
   }
 }
