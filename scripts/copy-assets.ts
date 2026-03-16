@@ -2,8 +2,9 @@ import { cp, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
 
-// The pre_assets folder is in the parent repository (absolute path)
-const PRE_ASSETS = '/Users/leonidpetrov/Projects/fantasy-tavern-sim/pre_assets/tavern_tycoon_assets';
+// The pre_assets folder is in the parent repository
+// Use relative path: go up from .worktrees/frontend-phaser to main repo
+const PRE_ASSETS = resolve(__dirname, '../../pre_assets/tavern_tycoon_assets');
 const PUBLIC_ASSETS = resolve(__dirname, '../public/assets/sprites');
 
 async function copyAssets(): Promise<void> {

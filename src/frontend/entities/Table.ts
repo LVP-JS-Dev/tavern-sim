@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { LAYERS, TILE_SIZE } from '../config';
+import { SPRITE_KEYS } from '../scenes/BootScene';
 
 export class Table extends Phaser.GameObjects.Container {
   public readonly index: number;
@@ -10,11 +11,9 @@ export class Table extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.index = index;
 
-    // Add table sprite (placeholder rectangle until assets)
-    this.tableSprite = scene.add.sprite(0, 0, '__DEFAULT');
+    // Add table sprite
+    this.tableSprite = scene.add.sprite(0, 0, SPRITE_KEYS.TABLE);
     this.tableSprite.setOrigin(0.5, 0.5);
-    this.tableSprite.setTint(0x8b4513); // Brown color as placeholder
-    this.tableSprite.setScale(2, 1.5);
     this.add(this.tableSprite);
 
     // Add chairs around table (2 on each side)
@@ -36,9 +35,8 @@ export class Table extends Phaser.GameObjects.Container {
     ];
 
     chairOffsets.forEach((offset) => {
-      const chair = this.scene.add.sprite(offset.x, offset.y, '__DEFAULT');
+      const chair = this.scene.add.sprite(offset.x, offset.y, SPRITE_KEYS.CHAIR);
       chair.setOrigin(0.5, 0.5);
-      chair.setTint(0x654321); // Darker brown for chairs
       chair.setScale(0.8);
       this.chairs.push(chair);
       this.add(chair);

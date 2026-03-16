@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { getBridge } from '../index';
+import { getBridge, consumeOfflineProgress } from '../index';
 import { GoldDisplay } from '../ui/GoldDisplay';
 import type { StateBridge } from '../bridge/types';
 import type { GameState, GoldU } from '../../types';
@@ -9,6 +9,7 @@ export class HUDScene extends Phaser.Scene {
   private unsubscribe?: () => void;
 
   private goldDisplay!: GoldDisplay;
+  private toastContainer?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'HUDScene' });
@@ -30,6 +31,73 @@ export class HUDScene extends Phaser.Scene {
 
     // Initial update
     this.updateUI(this.bridge.getState());
+
+    // Show offline progress toast if available
+    this.showOfflineProgressToast();
+  }
+
+  private showOfflineProgressToast(): void {
+    const progress = consumeOfflineProgress();
+    if (!progress) return;
+
+    const width = this.cameras.main.width;
+
+    // Create toast container at top center
+    this.toastContainer = this.add.container(width / 2, 100);
+
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.8);
+    bg.fillRoundedRect(-150, -30, 300, 60, 10);
+    this.toastContainer.add(bg);
+
+    // Gold icon
+    const goldIcon = this.add.text(-130, 0, '🪙', { fontSize: '24px' });
+    goldIcon.setOrigin(0, 0.5);
+    this.toastContainer.add(goldIcon);
+
+    // Text
+    const text = this.add.text(-100, 0, `While away: +${progress.goldEarned.toFixed(1)} gold`, {
+      fontFamily: 'Arial',
+      fontSize: '16px',
+      color: '#ffd700',
+      fontStyle: 'bold',
+    });
+    text.setOrigin(0, 0.5);
+    this.toastContainer.add(text);
+
+    // Animate in
+    this.toastContainer.setAlpha(0);
+    this.toastContainer.setY(80);
+
+    this.tweens.add({
+      targets: this.toastContainer,
+      alpha: 1,
+      y: 100,
+      duration: 300,
+      ease: 'Back.easeOut',
+    });
+
+    // Auto-dismiss after 3 seconds
+    this.time.delayedCall(3000, () => {
+      this.dismissToast();
+    });
+  }
+
+  private dismissToast(): void {
+    if (!this.toastContainer) return;
+
+    this.tweens.add({
+      targets: this.toastContainer,
+      alpha: 0,
+      y: 80,
+      duration: 200,
+      ease: 'Power2',
+      onComplete: () => {
+        this.toastContainer?.destroy();
+        this.toastContainer = undefined;
+      },
+    });
   }
 
   private createMenuButton(): void {

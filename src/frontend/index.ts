@@ -3,6 +3,7 @@ import { createStateBridge, LocalStorageAdapter } from './bridge';
 import { createInitialState } from '../state/initial';
 import { migrateState } from '../state/migrations';
 import { calculateOfflineProgress } from '../time/offline';
+import { GOLD_MULTIPLIER } from '../config/balance';
 import type { StateBridge } from './bridge';
 import type { GoldU } from '../types/state';
 import type { GameState } from '../types';
@@ -12,6 +13,25 @@ export { SPRITE_KEYS } from './scenes/BootScene';
 
 // Global bridge instance
 let bridge: StateBridge | null = null;
+
+// Offline progress result for toast display
+let offlineProgress: { goldEarned: GoldU; secondsAway: number } | null = null;
+
+/**
+ * Get offline progress to display in toast notification.
+ * Returns null if no offline progress or already consumed.
+ */
+export function consumeOfflineProgress(): { goldEarned: number; secondsAway: number } | null {
+  const progress = offlineProgress;
+  offlineProgress = null; // Consume after reading
+  if (progress && progress.goldEarned > 0) {
+    return {
+      goldEarned: progress.goldEarned / GOLD_MULTIPLIER,
+      secondsAway: progress.secondsAway,
+    };
+  }
+  return null;
+}
 
 export function getBridge(): StateBridge {
   if (!bridge) {
@@ -67,7 +87,13 @@ function applyOfflineProgress(state: GameState): GameState {
   const result = calculateOfflineProgress(now, lastSeen, incomePerSecondU);
 
   if (result.goldEarned > 0) {
-    console.log(`[Frontend] Offline progress: +${result.goldEarned} gold`);
+    // Store for toast display
+    const secondsAway = Math.floor((now - lastSeen) / 1000);
+    offlineProgress = { goldEarned: result.goldEarned, secondsAway };
+
+    // Log for debugging
+    const displayGold = result.goldEarned / GOLD_MULTIPLIER;
+    console.log(`[Frontend] Offline progress: +${displayGold.toFixed(1)} gold (${formatTime(secondsAway)})`);
 
     return {
       ...state,
@@ -80,6 +106,12 @@ function applyOfflineProgress(state: GameState): GameState {
   }
 
   return state;
+}
+
+function formatTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+  return `${(seconds / 3600).toFixed(1)}h`;
 }
 
 // Auto-init when DOM is ready

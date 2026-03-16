@@ -1,6 +1,15 @@
 import Phaser from 'phaser';
 import { LAYERS } from '../config';
+import { SPRITE_KEYS } from '../scenes/BootScene';
 import type { Table } from './Table';
+
+// Map visitor types to sprite keys
+const VISITOR_SPRITE_MAP: Record<string, string> = {
+  adventurer: SPRITE_KEYS.VISITOR_02,
+  merchant: SPRITE_KEYS.VISITOR_03,
+  noble: SPRITE_KEYS.VISITOR_04,
+  peasant: SPRITE_KEYS.VISITOR_02, // Default to 02
+};
 
 export class Visitor extends Phaser.GameObjects.Container {
   public readonly visitorId: string;
@@ -13,10 +22,10 @@ export class Visitor extends Phaser.GameObjects.Container {
     this.visitorId = visitorId;
     this.targetTable = table;
 
-    // Create sprite (placeholder colored rectangle)
-    this.sprite = scene.add.sprite(0, 0, '__DEFAULT');
+    // Create sprite using loaded assets
+    const spriteKey = VISITOR_SPRITE_MAP[type] ?? SPRITE_KEYS.VISITOR_02;
+    this.sprite = scene.add.sprite(0, 0, spriteKey);
     this.sprite.setOrigin(0.5, 0.5);
-    this.sprite.setTint(this.getColorForType(type));
     this.sprite.setScale(0.8, 1.2);
     this.add(this.sprite);
 
@@ -32,16 +41,6 @@ export class Visitor extends Phaser.GameObjects.Container {
 
     // Start walking animation
     this.walkToTable();
-  }
-
-  private getColorForType(type: string): number {
-    const typeMap: Record<string, number> = {
-      adventurer: 0x4169e1, // Royal blue
-      merchant: 0x228b22,   // Forest green
-      noble: 0xffd700,      // Gold
-      peasant: 0x8b4513,    // Brown
-    };
-    return typeMap[type] ?? 0x808080; // Default gray
   }
 
   private walkToTable(): void {
