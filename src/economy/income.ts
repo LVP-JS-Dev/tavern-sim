@@ -7,6 +7,8 @@
  */
 
 import type { GoldU, HeroState } from "../types/state";
+import type { GameState } from "../types";
+import { getUpgradeEffects } from "../tavern";
 
 // ============================================================================
 // INCOME CALCULATION
@@ -42,4 +44,41 @@ export function calculateTotalIncome(roster: Record<string, HeroState>): GoldU {
   }
 
   return total;
+}
+
+// ============================================================================
+// INCOME WITH MULTIPLIER
+// ============================================================================
+
+/**
+ * Calculates the total income per second from all heroes, applying the goldMultiplier
+ * from tavern upgrades.
+ *
+ * Formula: income = floor(baseIncome * goldMultiplier)
+ *
+ * The goldMultiplier comes from the "bar" upgrade branch:
+ * - Level 0: 1x multiplier
+ * - Level 1: 1.2x
+ * - Level 2: 1.5x
+ * - Level 3: 2x
+ * - Level 4: 2.5x
+ * - Level 5: 3x
+ *
+ * @param state - The full game state (to access tavern upgrades and heroes)
+ * @returns Total income per second in fixed-point units (GoldU), with multiplier applied
+ *
+ * @example
+ * // State with bar level 0 (multiplier 1)
+ * const income = calculateTotalIncomeWithMultiplier(state);
+ * // income = 1000 (no multiplier effect)
+ *
+ * @example
+ * // State with bar level 2 (multiplier 1.5)
+ * const income = calculateTotalIncomeWithMultiplier(stateWithBar2);
+ * // income = floor(1000 * 1.5) = 1500
+ */
+export function calculateTotalIncomeWithMultiplier(state: GameState): GoldU {
+  const effects = getUpgradeEffects(state.tavern.upgrades);
+  const baseIncome = calculateTotalIncome(state.heroes.roster);
+  return Math.floor(baseIncome * effects.goldMultiplier) as GoldU;
 }
