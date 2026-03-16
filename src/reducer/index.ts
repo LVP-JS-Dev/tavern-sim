@@ -21,6 +21,7 @@ import { success, failure, invalidAction } from "../types";
 import {
   isTickAction,
   isUpgradeHeroAction,
+  isUpgradeTavernAction,
   isCalculateOfflineAction,
   isSaveAction,
   isLoadAction,
@@ -28,6 +29,7 @@ import {
 import {
   handleTick,
   handleUpgradeHero,
+  handleUpgradeTavern,
   handleCalculateOffline,
 } from "./handlers";
 
@@ -107,6 +109,11 @@ export function reduce(
   // UPGRADE_HERO - Upgrade a hero's level
   if (isUpgradeHeroAction(action)) {
     return handleUpgradeHero(state, action, now);
+  }
+
+  // UPGRADE_TAVERN - Upgrade a tavern branch
+  if (isUpgradeTavernAction(action)) {
+    return handleUpgradeTavern(state, action, now);
   }
 
   // CALCULATE_OFFLINE - Calculate and apply offline progress

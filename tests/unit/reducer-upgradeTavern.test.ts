@@ -16,10 +16,11 @@ import {
 import type { GoldU, GameState } from "../../src/types";
 import { createInitialState } from "../../src/state/initial";
 import { handleUpgradeTavern } from "../../src/reducer/handlers";
+import { reduce } from "../../src/reducer";
 
 function createStateWithUpgrades(
   upgrades: Record<string, number>,
-  gold: number = 10000000
+  gold: number = 10000000,
 ): GameState {
   const now = 1700000000000;
   const state = createInitialState(now, 12345);
@@ -87,7 +88,11 @@ describe("tavern error factories", () => {
   });
 
   it("insufficientGoldForUpgrade creates error", () => {
-    const error = insufficientGoldForUpgrade("kitchen", 150000 as GoldU, 100000 as GoldU);
+    const error = insufficientGoldForUpgrade(
+      "kitchen",
+      150000 as GoldU,
+      100000 as GoldU,
+    );
     expect(error.code).toBe("INSUFFICIENT_GOLD_FOR_UPGRADE");
     expect(error.branchId).toBe("kitchen");
     expect(isTavernError(error)).toBe(true);
@@ -104,7 +109,11 @@ describe("handleUpgradeTavern", () => {
   describe("successful upgrades", () => {
     it("increases branch level and deducts gold", () => {
       const state = createStateWithUpgrades({ bar: 0 }, 100000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
 
       expect(result.state.tavern.upgrades["bar"]).toBe(1);
       expect(result.state.wallet.gold).toBe(0);
@@ -113,15 +122,25 @@ describe("handleUpgradeTavern", () => {
 
     it("increases overall tavern level", () => {
       const state = createStateWithUpgrades({}, 10000000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
       expect(result.state.tavern.level).toBe(2);
     });
 
     it("emits TAVERN_UPGRADE_APPLIED event", () => {
       const state = createStateWithUpgrades({ bar: 0 }, 100000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
 
-      const appliedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_APPLIED");
+      const appliedEvents = result.events.filter(
+        (e) => e.type === "TAVERN_UPGRADE_APPLIED",
+      );
       expect(appliedEvents).toHaveLength(1);
     });
   });
@@ -132,7 +151,7 @@ describe("handleUpgradeTavern", () => {
       const result = handleUpgradeTavern(
         state,
         { type: "UPGRADE_TAVERN", branchId: "invalid" as any },
-        Date.now()
+        Date.now(),
       );
 
       expect(result.error).toBeDefined();
@@ -141,7 +160,11 @@ describe("handleUpgradeTavern", () => {
 
     it("rejects when at max level", () => {
       const state = createStateWithUpgrades({ bar: 5 }, 10000000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
 
       expect(result.error).toBeDefined();
       expect(result.error?.code).toBe("MAX_LEVEL_REACHED");
@@ -149,7 +172,11 @@ describe("handleUpgradeTavern", () => {
 
     it("rejects when not enough gold", () => {
       const state = createStateWithUpgrades({ bar: 0 }, 50000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
 
       expect(result.error).toBeDefined();
       expect(result.error?.code).toBe("INSUFFICIENT_GOLD_FOR_UPGRADE");
@@ -159,10 +186,31 @@ describe("handleUpgradeTavern", () => {
   describe("edge cases", () => {
     it("handles corrupted state (level > maxLevel)", () => {
       const state = createStateWithUpgrades({ bar: 10 }, 10000000);
-      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      const result = handleUpgradeTavern(
+        state,
+        upgradeTavern("bar"),
+        Date.now(),
+      );
 
       expect(result.error).toBeDefined();
       expect(result.error?.code).toBe("CORRUPTED_STATE");
     });
+  });
+});
+
+describe("reduce() integration", () => {
+  it("routes UPGRADE_TAVERN to handler", () => {
+    const state = createStateWithUpgrades({ bar: 0 }, 100000);
+    const result = reduce(state, upgradeTavern("bar"), Date.now());
+
+    expect(result.state.tavern.upgrades["bar"]).toBe(1);
+    expect(result.state.wallet.gold).toBe(0);
+  });
+
+  it("returns error for unknown action type gracefully", () => {
+    const state = createStateWithUpgrades({}, 10000000);
+    const result = reduce(state, { type: "UNKNOWN" as any }, Date.now());
+
+    expect(result.error).toBeDefined();
   });
 });

@@ -35,16 +35,25 @@ import {
   tavernUpgradeApplied,
   tavernUpgradeRejected,
 } from "../types/events";
-import { heroNotFound, insufficientGold, invalidLevels, invalidBranch, tavernMaxLevelReached, insufficientGoldForUpgrade, corruptedState } from "../types/errors";
+import {
+  heroNotFound,
+  insufficientGold,
+  invalidLevels,
+  invalidBranch,
+  tavernMaxLevelReached,
+  insufficientGoldForUpgrade,
+  corruptedState,
+} from "../types/errors";
 import { processTick } from "../time/tick";
 import { calculateOfflineProgress } from "../time/offline";
 import { calculateTotalIncome } from "../economy/income";
-import { calculateTotalUpgradeCost, calculateAffordableUpgrades, TICK_MS } from "../config/balance";
-import { getHeroConfig, isValidHeroId } from "../config/heroes";
 import {
-  UPGRADE_BRANCHES,
-  getUpgradeCost,
-} from "../config/upgradeBranches";
+  calculateTotalUpgradeCost,
+  calculateAffordableUpgrades,
+  TICK_MS,
+} from "../config/balance";
+import { getHeroConfig, isValidHeroId } from "../config/heroes";
+import { UPGRADE_BRANCHES, getUpgradeCost } from "../config/upgradeBranches";
 import type { UpgradeBranchId } from "../config/upgradeBranches";
 
 // ============================================================================
@@ -82,7 +91,7 @@ import type { UpgradeBranchId } from "../config/upgradeBranches";
 export function handleTick(
   state: GameState,
   action: TickAction,
-  now: number
+  now: number,
 ): ReduceResult {
   // Delegate to the processTick function from time/tick module
   return processTick(state, now);
@@ -123,33 +132,25 @@ export function handleTick(
 export function handleUpgradeHero(
   state: GameState,
   action: UpgradeHeroAction,
-  now: number
+  now: number,
 ): ReduceResult {
   const { heroId, levels = 1 } = action;
   const events: DomainEvent[] = [];
 
   // 1. Validate requested levels
   if (levels <= 0) {
-    events.push(
-      heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD")
-    );
+    events.push(heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD"));
     return failure(
       state,
       events,
-      invalidLevels(levels, "Levels must be a positive number")
+      invalidLevels(levels, "Levels must be a positive number"),
     );
   }
 
   // 2. Validate hero ID exists in definitions
   if (!isValidHeroId(heroId)) {
-    events.push(
-      heroUpgradeRejected(heroId, levels, "HERO_NOT_FOUND")
-    );
-    return failure(
-      state,
-      events,
-      heroNotFound(heroId)
-    );
+    events.push(heroUpgradeRejected(heroId, levels, "HERO_NOT_FOUND"));
+    return failure(state, events, heroNotFound(heroId));
   }
 
   // 3. Check if hero exists in roster - if not, auto-hire at level 0
@@ -184,14 +185,8 @@ export function handleUpgradeHero(
   const heroConfig = getHeroConfig(heroId);
   if (!heroConfig) {
     // This should never happen since we validated heroId, but TypeScript needs it
-    events.push(
-      heroUpgradeRejected(heroId, levels, "HERO_NOT_FOUND")
-    );
-    return failure(
-      state,
-      events,
-      heroNotFound(heroId)
-    );
+    events.push(heroUpgradeRejected(heroId, levels, "HERO_NOT_FOUND"));
+    return failure(state, events, heroNotFound(heroId));
   }
 
   // 5. Check if player has any gold
@@ -201,16 +196,10 @@ export function handleUpgradeHero(
       heroConfig.baseUpgradeCost,
       heroState.level,
       1,
-      heroConfig.upgradeMultiplier
+      heroConfig.upgradeMultiplier,
     );
-    events.push(
-      heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD")
-    );
-    return failure(
-      state,
-      events,
-      insufficientGold(heroId, singleLevelCost, 0)
-    );
+    events.push(heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD"));
+    return failure(state, events, insufficientGold(heroId, singleLevelCost, 0));
   }
 
   // 6. Calculate how many levels can be afforded
@@ -219,7 +208,7 @@ export function handleUpgradeHero(
     heroState.level,
     availableGold,
     levels,
-    heroConfig.upgradeMultiplier
+    heroConfig.upgradeMultiplier,
   );
 
   // 7. If no levels can be afforded, reject the upgrade
@@ -228,16 +217,14 @@ export function handleUpgradeHero(
       heroConfig.baseUpgradeCost,
       heroState.level,
       1,
-      heroConfig.upgradeMultiplier
+      heroConfig.upgradeMultiplier,
     );
 
-    events.push(
-      heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD")
-    );
+    events.push(heroUpgradeRejected(heroId, levels, "INSUFFICIENT_GOLD"));
     return failure(
       state,
       events,
-      insufficientGold(heroId, singleUpgradeCost, availableGold)
+      insufficientGold(heroId, singleUpgradeCost, availableGold),
     );
   }
 
@@ -275,7 +262,7 @@ export function handleUpgradeHero(
 
   // Emit upgrade applied event
   events.push(
-    heroUpgradeApplied(heroId, affordableLevels, totalCost, newLevel)
+    heroUpgradeApplied(heroId, affordableLevels, totalCost, newLevel),
   );
 
   return success(newState, events);
@@ -315,7 +302,7 @@ export function handleUpgradeHero(
  */
 export function handleCalculateOffline(
   state: GameState,
-  action: CalculateOfflineAction
+  action: CalculateOfflineAction,
 ): ReduceResult {
   const { now } = action;
   const events: DomainEvent[] = [];
@@ -328,14 +315,14 @@ export function handleCalculateOffline(
   const offlineResult = calculateOfflineProgress(
     now,
     lastSeenAtMs,
-    incomePerSecondU
+    incomePerSecondU,
   );
 
   // If no progress (zero income or negative time), return unchanged state
   if (offlineResult.goldEarned <= 0) {
     // Still emit an offline progress applied event for logging purposes
     events.push(
-      offlineProgressApplied(0, offlineResult.ticksSimulated, 0, now)
+      offlineProgressApplied(0, offlineResult.ticksSimulated, 0, now),
     );
     return success(state, events);
   }
@@ -346,7 +333,12 @@ export function handleCalculateOffline(
     const excessMs = rawDeltaMs - offlineResult.ticksSimulated * TICK_MS; // Approximate
 
     events.push(
-      securityOfflineClamped(rawDeltaMs, offlineResult.ticksSimulated * TICK_MS, excessMs, now)
+      securityOfflineClamped(
+        rawDeltaMs,
+        offlineResult.ticksSimulated * TICK_MS,
+        excessMs,
+        now,
+      ),
     );
   }
 
@@ -361,14 +353,12 @@ export function handleCalculateOffline(
       offlineResult.goldEarned,
       offlineResult.ticksSimulated,
       actualDeltaMs,
-      now
-    )
+      now,
+    ),
   );
 
   // Emit gold earned event
-  events.push(
-    goldEarned(offlineResult.goldEarned, "OFFLINE", now)
-  );
+  events.push(goldEarned(offlineResult.goldEarned, "OFFLINE", now));
 
   // Create new state with updated wallet and timestamps
   const newState: GameState = {
@@ -376,7 +366,8 @@ export function handleCalculateOffline(
     wallet: {
       ...state.wallet,
       gold: state.wallet.gold + offlineResult.goldEarned,
-      lifetimeEarnedGold: state.wallet.lifetimeEarnedGold + offlineResult.goldEarned,
+      lifetimeEarnedGold:
+        state.wallet.lifetimeEarnedGold + offlineResult.goldEarned,
     },
     time: {
       ...state.time,
@@ -412,7 +403,7 @@ export function handleCalculateOffline(
 export function applyMultipleTicks(
   state: GameState,
   tickCount: number,
-  startNow: number
+  startNow: number,
 ): ReduceResult {
   let currentState = state;
   const allEvents: DomainEvent[] = [];
@@ -466,7 +457,7 @@ export function applyMultipleTicks(
 export function handleUpgradeTavern(
   state: GameState,
   action: UpgradeTavernAction,
-  now: number
+  now: number,
 ): ReduceResult {
   const { branchId } = action;
   const events: DomainEvent[] = [];
@@ -483,13 +474,17 @@ export function handleUpgradeTavern(
 
   // 3. Handle corrupted state (level > maxLevel)
   if (currentLevel > branch.maxLevel) {
-    events.push(tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"));
+    events.push(
+      tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"),
+    );
     return failure(state, events, corruptedState(branchId, currentLevel));
   }
 
   // 4. Check: already max level?
   if (currentLevel >= branch.maxLevel) {
-    events.push(tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"));
+    events.push(
+      tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"),
+    );
     return failure(state, events, tavernMaxLevelReached(branchId));
   }
 
@@ -499,8 +494,14 @@ export function handleUpgradeTavern(
   // 6. Check: enough gold?
   const availableGold = state.wallet.gold;
   if (availableGold < cost) {
-    events.push(tavernUpgradeRejected(branchId, currentLevel, "INSUFFICIENT_GOLD"));
-    return failure(state, events, insufficientGoldForUpgrade(branchId, cost, availableGold));
+    events.push(
+      tavernUpgradeRejected(branchId, currentLevel, "INSUFFICIENT_GOLD"),
+    );
+    return failure(
+      state,
+      events,
+      insufficientGoldForUpgrade(branchId, cost, availableGold),
+    );
   }
 
   // 7. Apply upgrade
