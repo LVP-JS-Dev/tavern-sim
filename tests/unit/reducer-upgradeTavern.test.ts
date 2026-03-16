@@ -21,9 +21,10 @@ import { reduce } from "../../src/reducer";
 function createStateWithUpgrades(
   upgrades: Record<string, number>,
   gold: number = 10000000,
+  now?: number,
 ): GameState {
-  const now = 1700000000000;
-  const state = createInitialState(now, 12345);
+  const timestamp = now ?? 1700000000000;
+  const state = createInitialState(timestamp, 12345);
   return {
     ...state,
     wallet: { ...state.wallet, gold },
@@ -212,5 +213,64 @@ describe("reduce() integration", () => {
     const result = reduce(state, { type: "UNKNOWN" as any }, Date.now());
 
     expect(result.error).toBeDefined();
+  });
+});
+
+import { DirectorServiceImpl } from "../../src/systems/director/service";
+import { applyMultipleTicks } from "../../src/reducer/handlers";
+
+describe("Director spawning with upgrades", () => {
+  it("respects maxCapacity from rooms upgrades", () => {
+    const director = new DirectorServiceImpl();
+
+    // Create state with rooms level 0 (capacity 3)
+    const state0 = createStateWithUpgrades({ rooms: 0 }, 10000000);
+    state0.director.visitors = [{ id: "1" }, { id: "2" }, { id: "3" }];
+    expect(director.canSpawn(state0.director, 0, state0)).toBe(false);
+
+    // Create state with rooms level 2 (capacity 5)
+    const state2 = createStateWithUpgrades({ rooms: 2 }, 10000000);
+    state2.director.visitors = [{ id: "1" }, { id: "2" }, { id: "3" }, { id: "4" }];
+    expect(director.canSpawn(state2.director, 0, state2)).toBe(true);
+  });
+});
+
+describe("income calculation with upgrades", () => {
+  it("goldMultiplier affects income", () => {
+    // Create state with bar level 0 (multiplier 1)
+    const now = Date.now();
+    let state0 = createStateWithUpgrades({ bar: 0 }, 10000000, now);
+    state0 = {
+      ...state0,
+      heroes: {
+        ...state0.heroes,
+        roster: {
+          ...state0.heroes.roster,
+          "barkeep": { level: 1, incomePerSecondU: 1000 },
+        },
+      },
+    };
+
+    const result0 = applyMultipleTicks(state0, 25, now);
+    const goldEarned0 = result0.state.wallet.gold - 10000000;
+
+    // Create state with bar level 2 (multiplier 1.5)
+    let state2 = createStateWithUpgrades({ bar: 2 }, 10000000, now);
+    state2 = {
+      ...state2,
+      heroes: {
+        ...state2.heroes,
+        roster: {
+          ...state2.heroes.roster,
+          "barkeep": { level: 1, incomePerSecondU: 1000 },
+        },
+      },
+    };
+
+    const result2 = applyMultipleTicks(state2, 25, now);
+    const goldEarned2 = result2.state.wallet.gold - 10000000;
+
+    // Gold with multiplier should be higher
+    expect(goldEarned2).toBeGreaterThan(goldEarned0);
   });
 });
