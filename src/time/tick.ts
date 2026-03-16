@@ -11,7 +11,7 @@
 
 import { type GameState, type ReduceResult, type DomainEvent, success } from "../types";
 import { TICK_MS, calculateIncomePerTick } from "../config/balance";
-import { calculateTotalIncome } from "../economy/income";
+import { calculateTotalIncomeWithMultiplier } from "../economy/income";
 import { goldEarned } from "../types/events";
 
 // ============================================================================
@@ -82,7 +82,7 @@ function processDirector(ctx: TickContext): void {
  * Processes hero-related state changes including income generation.
  *
  * This is the core income generation step:
- * 1. Calculate total income per second from all heroes
+ * 1. Calculate total income per second from all heroes (with goldMultiplier applied)
  * 2. Convert to income per tick
  * 3. Add gold to wallet and lifetime earnings
  * 4. Emit GOLD_EARNED event
@@ -90,8 +90,8 @@ function processDirector(ctx: TickContext): void {
 function processHeroes(ctx: TickContext): void {
   const { state, events, now } = ctx;
 
-  // Calculate total income from all heroes
-  const incomePerSecondU = calculateTotalIncome(state.heroes.roster);
+  // Calculate total income from all heroes with goldMultiplier applied
+  const incomePerSecondU = calculateTotalIncomeWithMultiplier(state);
 
   // If no income (no heroes or all at level 0), skip
   if (incomePerSecondU <= 0) {

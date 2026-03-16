@@ -15,15 +15,17 @@ describe('DirectorSystem', () => {
   describe('DirectorServiceImpl', () => {
     describe('canSpawn', () => {
       it('returns true when under max visitors', () => {
+        const gameState = createInitialState(Date.now(), 12345);
         const state: DirectorState = {
           visitors: [],
           spawnTimer: 0,
           nextVisitorId: 1,
         };
-        expect(service.canSpawn(state, 0)).toBe(true);
+        expect(service.canSpawn(state, 0, gameState)).toBe(true);
       });
 
       it('returns false when at max visitors', () => {
+        const gameState = createInitialState(Date.now(), 12345);
         const visitors = Array(10).fill(null).map((_, i) => ({
           id: `visitor-${i}`,
           type: 'patron' as const,
@@ -34,7 +36,7 @@ describe('DirectorSystem', () => {
           spawnTimer: 0,
           nextVisitorId: 11,
         };
-        expect(service.canSpawn(state, 0)).toBe(false);
+        expect(service.canSpawn(state, 0, gameState)).toBe(false);
       });
     });
 

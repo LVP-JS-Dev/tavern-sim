@@ -7,13 +7,16 @@ import type { RngService } from '../../core/rng';
 import type { DirectorState, DirectorContext, DirectorResult, Visitor } from './types';
 import { MAX_VISITORS, MAX_VISITOR_STAY_MS } from './constants';
 import { spawnVisitor, shouldDepart } from './spawn';
+import { getUpgradeEffects } from '../../tavern';
+import type { GameState } from '../../types';
 
 export class DirectorServiceImpl {
   /**
    * Check if a new visitor can spawn.
    */
-  canSpawn(state: DirectorState, rosterSize: number): boolean {
-    return state.visitors.length < MAX_VISITORS;
+  canSpawn(state: DirectorState, rosterSize: number, gameState: GameState): boolean {
+    const effects = getUpgradeEffects(gameState.tavern.upgrades);
+    return state.visitors.length < effects.maxCapacity;
   }
 
   /**
@@ -35,7 +38,7 @@ export class DirectorServiceImpl {
 
     // Try to spawn new visitor
     const rosterSize = Object.keys(state.heroes.roster).length;
-    if (this.canSpawn(directorState, rosterSize)) {
+    if (this.canSpawn(directorState, rosterSize, ctx.state)) {
       const newVisitor = spawnVisitor(
         rng.createStream('director'),
         directorState,

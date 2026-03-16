@@ -8,6 +8,8 @@
  * @module types/actions
  */
 
+import type { UpgradeBranchId } from "../config/upgradeBranches";
+
 // ============================================================================
 // TICK ACTION
 // ============================================================================
@@ -78,6 +80,19 @@ export interface LoadAction {
 }
 
 // ============================================================================
+// UPGRADE TAVERN ACTION
+// ============================================================================
+
+/**
+ * Requests an upgrade for a specific tavern branch.
+ * Validates gold availability and level limits.
+ */
+export interface UpgradeTavernAction {
+  readonly type: "UPGRADE_TAVERN";
+  readonly branchId: UpgradeBranchId;
+}
+
+// ============================================================================
 // ACTION UNION
 // ============================================================================
 
@@ -118,7 +133,8 @@ export type Action =
   | UpgradeHeroAction
   | CalculateOfflineAction
   | SaveAction
-  | LoadAction;
+  | LoadAction
+  | UpgradeTavernAction;
 
 // ============================================================================
 // ACTION TYPE GUARDS
@@ -163,6 +179,15 @@ export function isLoadAction(action: Action): action is LoadAction {
   return action.type === "LOAD";
 }
 
+/**
+ * Type guard to check if an action is an UpgradeTavernAction.
+ */
+export function isUpgradeTavernAction(
+  action: Action
+): action is UpgradeTavernAction {
+  return action.type === "UPGRADE_TAVERN";
+}
+
 // ============================================================================
 // ACTION FACTORIES
 // ============================================================================
@@ -203,4 +228,12 @@ export function save(): SaveAction {
  */
 export function load(): LoadAction {
   return { type: "LOAD" };
+}
+
+/**
+ * Creates an UPGRADE_TAVERN action.
+ * @param branchId - The ID of the tavern branch to upgrade
+ */
+export function upgradeTavern(branchId: UpgradeBranchId): UpgradeTavernAction {
+  return { type: "UPGRADE_TAVERN", branchId };
 }

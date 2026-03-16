@@ -50,6 +50,7 @@ export {
   type CalculateOfflineAction,
   type SaveAction,
   type LoadAction,
+  type UpgradeTavernAction,
   // Action union
   type Action,
   // Type guards
@@ -58,12 +59,14 @@ export {
   isCalculateOfflineAction,
   isSaveAction,
   isLoadAction,
+  isUpgradeTavernAction,
   // Action factories
   tick,
   upgradeHero,
   calculateOffline,
   save,
   load,
+  upgradeTavern,
 } from "./actions";
 
 // ============================================================================
@@ -77,6 +80,8 @@ export {
   type GoldEarnedEvent,
   type OfflineProgressAppliedEvent,
   type SecurityOfflineClampedEvent,
+  type TavernUpgradeAppliedEvent,
+  type TavernUpgradeRejectedEvent,
   // Event union
   type DomainEvent,
   // Type guards
@@ -85,12 +90,16 @@ export {
   isGoldEarnedEvent,
   isOfflineProgressAppliedEvent,
   isSecurityOfflineClampedEvent,
+  isTavernUpgradeAppliedEvent,
+  isTavernUpgradeRejectedEvent,
   // Event factories
   heroUpgradeApplied,
   heroUpgradeRejected,
   goldEarned,
   offlineProgressApplied,
   securityOfflineClamped,
+  tavernUpgradeApplied,
+  tavernUpgradeRejected,
 } from "./events";
 
 // ============================================================================
@@ -106,6 +115,7 @@ export {
   type StateError,
   type PersistenceError,
   type ValidationError,
+  type TavernError,
   // Error union
   type DomainError,
   // Type guards
@@ -114,6 +124,7 @@ export {
   isStateError,
   isPersistenceError,
   isValidationError,
+  isTavernError,
   // Error factories
   heroNotFound,
   insufficientGold,
@@ -129,6 +140,10 @@ export {
   fileNotFound,
   invalidAction,
   invalidLevels,
+  invalidBranch,
+  tavernMaxLevelReached,
+  insufficientGoldForUpgrade,
+  corruptedState,
 } from "./errors";
 
 // ============================================================================
