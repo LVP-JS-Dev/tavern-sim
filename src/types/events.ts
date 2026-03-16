@@ -151,6 +151,48 @@ export interface WeatherChangedEvent {
 }
 
 // ============================================================================
+// TAVERN UPGRADE APPLIED EVENT
+// ============================================================================
+
+/**
+ * Emitted when a tavern upgrade is successfully applied.
+ * Contains the branch that was upgraded and the new level.
+ */
+export interface TavernUpgradeAppliedEvent {
+  readonly type: "TAVERN_UPGRADE_APPLIED";
+
+  /** ID of the branch that was upgraded */
+  readonly branchId: string;
+
+  /** New level of the branch after upgrade */
+  readonly newLevel: number;
+
+  /** Gold cost that was deducted from wallet */
+  readonly goldCost: GoldU;
+}
+
+// ============================================================================
+// TAVERN UPGRADE REJECTED EVENT
+// ============================================================================
+
+/**
+ * Emitted when a tavern upgrade cannot be applied.
+ * This occurs when the branch doesn't exist, is at max level, or player has insufficient gold.
+ */
+export interface TavernUpgradeRejectedEvent {
+  readonly type: "TAVERN_UPGRADE_REJECTED";
+
+  /** ID of the branch that couldn't be upgraded */
+  readonly branchId: string;
+
+  /** Current level of the branch */
+  readonly currentLevel: number;
+
+  /** Reason the upgrade was rejected */
+  readonly reason: "INVALID_BRANCH" | "MAX_LEVEL_REACHED" | "INSUFFICIENT_GOLD";
+}
+
+// ============================================================================
 // DOMAIN EVENT UNION
 // ============================================================================
 
@@ -205,7 +247,9 @@ export type DomainEvent =
   | GoldEarnedEvent
   | OfflineProgressAppliedEvent
   | SecurityOfflineClampedEvent
-  | WeatherChangedEvent;
+  | WeatherChangedEvent
+  | TavernUpgradeAppliedEvent
+  | TavernUpgradeRejectedEvent;
 
 // ============================================================================
 // EVENT TYPE GUARDS
@@ -261,6 +305,24 @@ export function isWeatherChangedEvent(
   event: DomainEvent
 ): event is WeatherChangedEvent {
   return event.type === "WEATHER_CHANGED";
+}
+
+/**
+ * Type guard to check if an event is a TavernUpgradeAppliedEvent.
+ */
+export function isTavernUpgradeAppliedEvent(
+  event: DomainEvent
+): event is TavernUpgradeAppliedEvent {
+  return event.type === "TAVERN_UPGRADE_APPLIED";
+}
+
+/**
+ * Type guard to check if an event is a TavernUpgradeRejectedEvent.
+ */
+export function isTavernUpgradeRejectedEvent(
+  event: DomainEvent
+): event is TavernUpgradeRejectedEvent {
+  return event.type === "TAVERN_UPGRADE_REJECTED";
 }
 
 // ============================================================================
@@ -387,5 +449,43 @@ export function weatherChanged(
     from,
     to,
     timestamp,
+  };
+}
+
+/**
+ * Creates a TAVERN_UPGRADE_APPLIED event.
+ * @param branchId - The ID of the upgraded branch
+ * @param newLevel - New level of the branch after upgrade
+ * @param goldCost - Gold cost deducted from wallet
+ */
+export function tavernUpgradeApplied(
+  branchId: string,
+  newLevel: number,
+  goldCost: GoldU
+): TavernUpgradeAppliedEvent {
+  return {
+    type: "TAVERN_UPGRADE_APPLIED",
+    branchId,
+    newLevel,
+    goldCost,
+  };
+}
+
+/**
+ * Creates a TAVERN_UPGRADE_REJECTED event.
+ * @param branchId - The ID of the branch that couldn't be upgraded
+ * @param currentLevel - Current level of the branch
+ * @param reason - Reason the upgrade was rejected
+ */
+export function tavernUpgradeRejected(
+  branchId: string,
+  currentLevel: number,
+  reason: TavernUpgradeRejectedEvent["reason"]
+): TavernUpgradeRejectedEvent {
+  return {
+    type: "TAVERN_UPGRADE_REJECTED",
+    branchId,
+    currentLevel,
+    reason,
   };
 }
