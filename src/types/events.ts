@@ -189,7 +189,7 @@ export interface TavernUpgradeRejectedEvent {
   readonly currentLevel: number;
 
   /** Reason the upgrade was rejected */
-  readonly reason: "INVALID_BRANCH" | "MAX_LEVEL_REACHED" | "INSUFFICIENT_GOLD";
+  readonly reason: "INVALID_BRANCH" | "MAX_LEVEL_REACHED" | "INSUFFICIENT_GOLD" | "CORRUPTED_STATE";
 }
 
 // ============================================================================
