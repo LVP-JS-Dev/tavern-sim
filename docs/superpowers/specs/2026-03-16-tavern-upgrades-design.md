@@ -1,5 +1,6 @@
 # Tavern Upgrade System Design
 
+#
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement a tavern upgrade system where players spend gold to improve 4 branches (bar, kitchen, rooms, decor) with exponential cost scaling and gameplay effects.
@@ -16,14 +17,19 @@
 
 ### Upgrade Branch Config
 
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+
 ```typescript
 // src/config/upgradeBranches.ts
+import type { GoldU } from '../types';
+
 export type UpgradeBranchId = 'bar' | 'kitchen' | 'rooms' | 'decor';
 
 export interface UpgradeBranchConfig {
   readonly id: UpgradeBranchId;
   readonly name: string;           // "Бар", "Кухня", etc.
-  readonly baseCost: number;       // Базовая стоимость (в GoldU)
+  readonly baseCost: GoldU;        // Базовая стоимость (в GoldU)
   readonly maxLevel: number;       // 5
   readonly effects: {
     // Значения эффектов по уровням (индекс = уровень)
@@ -34,11 +40,18 @@ export interface UpgradeBranchConfig {
   };
 }
 
+```
+
+### Branch Definitions
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+```typescript
 export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
   bar: {
     id: 'bar',
     name: 'Бар',
-    baseCost: 100000, // 10 gold in GoldU (fixed-point)
+    baseCost: 100000 as GoldU, // 10 gold (fixed-point: *10000)
     maxLevel: 5,
     effects: {
       goldMultiplier: [1, 1.2, 1.5, 2, 2.5, 3],
@@ -47,7 +60,7 @@ export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
   kitchen: {
     id: 'kitchen',
     name: 'Кухня',
-    baseCost: 150000, // 15 gold
+    baseCost: 150000 as GoldU, // 15 gold
     maxLevel: 5,
     effects: {
       visitorTiers: [1, 1, 2, 2, 3, 3],
@@ -56,7 +69,7 @@ export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
   rooms: {
     id: 'rooms',
     name: 'Комнаты',
-    baseCost: 200000, // 20 gold
+    baseCost: 200000 as GoldU, // 20 gold
     maxLevel: 5,
     effects: {
       capacity: [3, 4, 5, 6, 7, 8],
@@ -65,7 +78,7 @@ export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
   decor: {
     id: 'decor',
     name: 'Декор',
-    baseCost: 50000, // 5 gold
+    baseCost: 50000 as GoldU, // 5 gold
     maxLevel: 5,
     effects: {
       qualityBonus: [0, 0.1, 0.2, 0.3, 0.4, 0.5],
@@ -75,14 +88,14 @@ export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
 ```
 
 ### Cost Formula
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // src/config/upgradeBranches.ts
-import type { GoldU } from '../types';
-
 export function getUpgradeCost(branchId: UpgradeBranchId, currentLevel: number): GoldU {
   const branch = UPGRADE_BRANCHES[branchId];
-  return branch.baseCost * Math.pow(2, currentLevel) as GoldU;
+  // Use Math.floor to ensure integer result
+  return Math.floor(branch.baseCost * Math.pow(2, currentLevel)) as GoldU;
 }
 ```
 
@@ -95,21 +108,25 @@ Example costs for Bar (baseCost: 100000 = 10 gold):
 - **Total to max:** 3100000 (310 gold)
 
 ### State (existing in TavernSlice)
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // Already exists in src/types/state.ts
 interface TavernSlice {
-  readonly level: number;                    // Общий уровень таверны
+  readonly level: number;                    // Общий уровень таверны (0-20)
   readonly upgrades: Record<string, number>; // { bar: 2, kitchen: 1, ... }
 }
 ```
+
+Note: `tavern.level` ranges from 0 (no upgrades) to 20 (all branches maxed). This is intentional - it represents overall tavern progression.
 
 ---
 
 ## 2. Actions and Reducer
 
-### Action
-
+### Action Definition
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // src/types/actions.ts
 
@@ -127,13 +144,30 @@ export function upgradeTavern(branchId: UpgradeBranchId): UpgradeTavernAction {
 ```
 
 ### Reducer Handler
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // src/reducer/handlers.ts
 
-import { UPGRADE_BRANCHES, getUpgradeCost, type UpgradeBranchId } from '../config/upgradeBranches';
-import { tavernUpgradeApplied, tavernUpgradeRejected } from '../types/events';
-import { insufficientGold, invalidBranch } from '../types/errors';
+import {
+  UPGRADE_BRANCHES,
+  getUpgradeCost,
+  type UpgradeBranchId,
+  type UpgradeBranchConfig
+} from '../config/upgradeBranches';
+import {
+  tavernUpgradeApplied,
+  tavernUpgradeRejected
+} from '../types/events';
+import {
+  tavernError,
+  invalidBranch,
+  maxLevelReached,
+  insufficientGoldForUpgrade,
+  corruptedState
+} from '../types/errors';
+import type { GameState, ReduceResult, DomainEvent, GoldU } from '../types';
+import { success, failure } from '../types';
 
 export function handleUpgradeTavern(
   state: GameState,
@@ -146,41 +180,51 @@ export function handleUpgradeTavern(
   // 1. Validate branch exists
   const branch = UPGRADE_BRANCHES[branchId];
   if (!branch) {
-    events.push(tavernUpgradeRejected(branchId, 0, "INVALID_BRANCH"));
+    events.push(tavernUpgradeRejected(branchId, 0, 'INVALID_BRANCH'));
     return failure(state, events, invalidBranch(branchId));
   }
 
-  // 2. Get current level
+  // 2. Get current level (default 0)
   const currentLevel = state.tavern.upgrades[branchId] ?? 0;
 
-  // 3. Check: already max level?
-  if (currentLevel >= branch.maxLevel) {
-    events.push(tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"));
-    return failure(state, events, invalidBranch(branchId));
+  // 3. Handle corrupted state (level > maxLevel)
+  if (currentLevel > branch.maxLevel) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, 'MAX_LEVEL_REACHED'));
+    return failure(state, events, corruptedState(branchId, currentLevel));
   }
 
-  // 4. Calculate cost
+  // 4. Check: already max level?
+  if (currentLevel >= branch.maxLevel) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, 'MAX_LEVEL_REACHED'));
+    return failure(state, events, maxLevelReached(branchId));
+  }
+
+  // 5. Calculate cost
   const cost = getUpgradeCost(branchId, currentLevel);
 
-  // 5. Check: enough gold?
-  if (state.wallet.gold < cost) {
-    events.push(tavernUpgradeRejected(branchId, currentLevel, "INSUFFICIENT_GOLD"));
-    return failure(state, events, insufficientGold(branchId, cost, state.wallet.gold));
+  // 6. Check: enough gold?
+  const availableGold = state.wallet.gold;
+  if (availableGold < cost) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, 'INSUFFICIENT_GOLD'));
+    return failure(state, events, insufficientGoldForUpgrade(branchId, cost, availableGold));
   }
 
-  // 6. Apply upgrade
+  // 7. Apply upgrade
+  const newLevel = currentLevel + 1;
+  const newGold = state.wallet.gold - cost;
+
   const newState: GameState = {
     ...state,
     wallet: {
       ...state.wallet,
-      gold: state.wallet.gold - cost,
+      gold: newGold,
     },
     tavern: {
       ...state.tavern,
-      level: state.tavern.level + 1,
+      level: state.tavern.level + 1,  // Increment overall tavern level
       upgrades: {
         ...state.tavern.upgrades,
-        [branchId]: currentLevel + 1,
+        [branchId]: newLevel,
       },
     },
     meta: {
@@ -189,14 +233,75 @@ export function handleUpgradeTavern(
     },
   };
 
-  events.push(tavernUpgradeApplied(branchId, currentLevel + 1, cost));
+  // 8. Emit event
+  events.push(tavernUpgradeApplied(branchId, newLevel, cost));
 
   return success(newState, events);
 }
 ```
 
-### Event
+### Error Types
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+```typescript
+// src/types/errors.ts
 
+// Add to ErrorCode union
+export type ErrorCode =
+  // ... existing codes ...
+  | "INVALID_BRANCH"
+  | "MAX_LEVEL_REACHED"
+  | "INSUFFICIENT_GOLD_FOR_UPGRADE"
+  | "CORRUPTED_STATE";
+
+// New error type
+export interface TavernError {
+  readonly type: "TAVERN_ERROR";
+  readonly branchId: string;
+  readonly code: ErrorCode;
+  readonly message: string;
+}
+
+// Error factories
+export function tavernError(
+  code: ErrorCode,
+  branchId: string,
+  message: string
+): TavernError {
+  return { type: "TAVERN_ERROR", code, branchId, message };
+}
+
+export function invalidBranch(branchId: string): TavernError {
+  return tavernError("INVALID_BRANCH", branchId, `Invalid upgrade branch: ${branchId}`);
+}
+
+export function maxLevelReached(branchId: string): TavernError {
+  return tavernError("MAX_LEVEL_REACHED", branchId, `Branch ${branchId} is already at max level`);
+}
+
+export function insufficientGoldForUpgrade(
+  branchId: string,
+  cost: GoldU,
+  available: GoldU
+): TavernError {
+  return tavernError(
+    "INSUFFICIENT_GOLD_FOR_UPGRADE",
+    branchId,
+    `Insufficient gold: need ${cost} to upgrade ${branchId}, have ${available}`
+  );
+export function corruptedState(branchId: string, level: number): TavernError {
+  return tavernError(
+    "CORRUPTED_STATE",
+    branchId,
+    `Corrupted state: branch ${branchId} has level ${level} which exceeds max`
+  );
+```
+
+---
+
+## 3. Events Types
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // src/types/events.ts
 
@@ -234,28 +339,27 @@ export function tavernUpgradeRejected(
 }
 ```
 
-### Error Types
+---
 
+## 4. Effect Application
+
+### Upgrade Effects Interface
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
-// src/types/errors.ts
+// src/tavern/types.ts
 
-export interface TavernError {
-  readonly type: "TAVERN_ERROR";
-  readonly branchId: string;
-  readonly message: string;
-}
-
-export function invalidBranch(branchId: string): TavernError {
-  return { type: "TAVERN_ERROR", branchId, message: `Invalid upgrade branch: ${branchId}` };
+export interface UpgradeEffects {
+  readonly goldMultiplier: number;
+  readonly maxCapacity: number;
+  readonly visitorTier: number;
+  readonly qualityBonus: number;
 }
 ```
 
----
-
-## 3. Effect Application
-
 ### Get Effects Function
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // src/tavern/getUpgradeEffects.ts
 
@@ -277,199 +381,45 @@ export function getUpgradeEffects(upgrades: Record<string, number>): UpgradeEffe
 }
 ```
 
-```typescript
-// src/tavern/types.ts
-
-export interface UpgradeEffects {
-  readonly goldMultiplier: number;
-  readonly maxCapacity: number;
-  readonly visitorTier: number;
-  readonly qualityBonus: number;
-}
-```
-
 ### Director Integration
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+The existing `src/systems/director/service.ts`:
 
-**Income Generation (in tick processing):**
-
-The Director service at `src/systems/director/service.ts` should use `getUpgradeEffects()` to modify income calculation. This integrates with the existing tick pipeline.
-
+The `canSpawn` method:
 ```typescript
-// Integration point in src/time/tick.ts or DirectorService
+// In src/systems/director/service.ts
+// Import { getUpgradeEffects } from '../../tavern';
+import { UPGRADE_BRANCHES } from '../../config/upgradeBranches';
 
-import { getUpgradeEffects } from '../tavern/getUpgradeEffects';
+import type { DirectorState, GameState } from '../../types';
 
-// When calculating gold income from visitors:
-function calculateVisitorIncome(state: GameState): GoldU {
-  const effects = getUpgradeEffects(state.tavern.upgrades);
-  const visitorCount = state.director.visitors.length;
+export class DirectorServiceImpl {
+  // ... existing code ...
 
-  // Base: 1 gold per visitor per tick, multiplied by bar's goldMultiplier
-  return Math.floor(visitorCount * effects.goldMultiplier * 1000) as GoldU;
+  // Modified canSpawn to check capacity from upgrades
+  canSpawn(state: DirectorState, rosterSize: number, gameState: GameState): boolean {
+    const effects = getUpgradeEffects(gameState.tavern.upgrades);
+    return state.visitors.length < effects.maxCapacity;
+  }
+
+  // Modified spawn logic to use effects
+  // ... in spawn method, pass gameState and use effects
 }
 ```
 
-**Visitor Spawning (in DirectorService):**
-
+### Income Integration
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
-// Integration point in src/systems/director/service.ts
+// In src/time/tick.ts orimport { getUpgradeEffects } from '../tavern';
+import type { GameState, from '../types';
 
-import { getUpgradeEffects } from '../../tavern/getUpgradeEffects';
-
-// In canSpawn() or update() method:
-function canSpawnVisitor(state: GameState): boolean {
+// In income calculation:
+function calculateIncome(state: GameState): number {
   const effects = getUpgradeEffects(state.tavern.upgrades);
-
-  // Check capacity
-  if (state.director.visitors.length >= effects.maxCapacity) {
-    return false;
-  }
-
-  return true;
-}
-
-// When determining visitor type:
-function selectVisitorType(state: GameState): VisitorType {
-  const effects = getUpgradeEffects(state.tavern.upgrades);
-  const tier = effects.visitorTier;
-  const qualityRoll = Math.random() + effects.qualityBonus;
-
-  // Higher tier and qualityBonus = better visitors
-  // Implementation depends on existing visitor type system
-  return determineVisitorByTier(tier, qualityRoll);
-}
-```
-
----
-
-## 4. UI - Upgrade Panel (Frontend)
-
-**Note:** This section requires the `feature/frontend-phaser` branch to be merged first.
-
-### UpgradePanel Component
-
-```typescript
-// src/frontend/ui/UpgradePanel.ts
-
-import type { StateBridge } from '../bridge/StateBridge';
-import type { GameState } from '../../types';
-import { UPGRADE_BRANCHES, getUpgradeCost, type UpgradeBranchId } from '../../config/upgradeBranches';
-import { upgradeTavern } from '../../types/actions';
-
-export class UpgradePanel {
-  private container: Phaser.GameObjects.Container;
-  private branchButtons: Map<UpgradeBranchId, Phaser.GameObjects.Container>;
-
-  constructor(scene: Phaser.Scene, private bridge: StateBridge) {
-    this.container = scene.add.container(10, 607);
-    this.branchButtons = new Map();
-
-    this.createButtons(scene);
-  }
-
-  private createButtons(scene: Phaser.Scene): void {
-    const branches: UpgradeBranchId[] = ['bar', 'kitchen', 'rooms', 'decor'];
-
-    branches.forEach((branchId, index) => {
-      const config = UPGRADE_BRANCHES[branchId];
-      const x = index * 160; // 4 buttons in a row
-
-      const button = this.createBranchButton(scene, config, x);
-      this.branchButtons.set(branchId, button);
-      this.container.add(button);
-    });
-  }
-
-  private createBranchButton(
-    scene: Phaser.Scene,
-    config: UpgradeBranchConfig,
-    x: number
-  ): Phaser.GameObjects.Container {
-    const button = scene.add.container(x, 0);
-
-    // Button background
-    const bg = scene.add.rectangle(0, 0, 150, 80, 0x4a3728);
-    button.add(bg);
-
-    // Branch name
-    const nameText = scene.add.text(0, -25, config.name, {
-      fontSize: '14px',
-      color: '#ffffff'
-    }).setOrigin(0.5);
-    button.add(nameText);
-
-    // Level (updated in syncState)
-    const levelText = scene.add.text(0, 0, 'Ур. 0/5', {
-      fontSize: '12px',
-      color: '#ffcc00'
-    }).setOrigin(0.5);
-    button.add(levelText);
-    button.setData('levelText', levelText);
-
-    // Cost (updated in syncState)
-    const costText = scene.add.text(0, 20, '10 💰', {
-      fontSize: '11px',
-      color: '#aaaaaa'
-    }).setOrigin(0.5);
-    button.add(costText);
-    button.setData('costText', costText);
-
-    // Interactivity
-    bg.setInteractive({ useHandCursor: true });
-    bg.on('pointerdown', () => this.onUpgradeClick(config.id));
-
-    return button;
-  }
-
-  private onUpgradeClick(branchId: UpgradeBranchId): void {
-    this.bridge.dispatch(upgradeTavern(branchId));
-  }
-
-  syncState(state: GameState): void {
-    for (const [branchId, button] of this.branchButtons) {
-      const config = UPGRADE_BRANCHES[branchId];
-      const currentLevel = state.tavern.upgrades[branchId] ?? 0;
-      const cost = getUpgradeCost(branchId, currentLevel);
-
-      const levelText = button.getData('levelText') as Phaser.GameObjects.Text;
-      const costText = button.getData('costText') as Phaser.GameObjects.Text;
-
-      if (currentLevel >= config.maxLevel) {
-        levelText.setText('МАКС');
-        costText.setText('—');
-      } else {
-        levelText.setText(`Ур. ${currentLevel}/${config.maxLevel}`);
-        costText.setText(`${cost / 10000} 💰`); // Convert GoldU to display gold
-
-        const canAfford = state.wallet.gold >= cost;
-        costText.setColor(canAfford ? '#ffcc00' : '#666666');
-      }
-    }
-  }
-}
-```
-
-### HUDScene Integration
-
-```typescript
-// In src/frontend/scenes/HUDScene.ts
-
-import { UpgradePanel } from '../ui/UpgradePanel';
-
-export class HUDScene extends Phaser.Scene {
-  private upgradePanel!: UpgradePanel;
-
-  create(): void {
-    // ... existing code ...
-
-    this.upgradePanel = new UpgradePanel(this, this.bridge);
-  }
-
-  private syncState(state: GameState): void {
-    // ... existing code ...
-
-    this.upgradePanel.syncState(state);
-  }
+  const baseIncome = calculateBaseIncome(state.heroes.roster);
+  return Math.floor(baseIncome * effects.goldMultiplier);
 }
 ```
 
@@ -479,30 +429,33 @@ export class HUDScene extends Phaser.Scene {
 
 | File | Action | Description |
 |------|--------|-------------|
-| `src/config/upgradeBranches.ts` | Create | Upgrade branch config and cost formula |
+| `src/config/upgradeBranches.ts` | Create | Upgrade branch config, cost formula, type exports |
 | `src/tavern/types.ts` | Create | UpgradeEffects interface |
 | `src/tavern/getUpgradeEffects.ts` | Create | Get effects function |
 | `src/tavern/index.ts` | Create | Barrel export |
 | `src/types/actions.ts` | Modify | Add `UpgradeTavernAction` and factory |
-| `src/types/events.ts` | Modify | Add `TavernUpgradeAppliedEvent`, `TavernUpgradeRejectedEvent` |
-| `src/types/errors.ts` | Modify | Add `TavernError` type |
+| `src/types/events.ts` | Modify | Add `TavernUpgradeAppliedEvent`, `TavernUpgradeRejectedEvent`, factories |
+| `src/types/errors.ts` | Modify | Add `TavernError`, error codes, factories |
 | `src/reducer/handlers.ts` | Modify | Add `handleUpgradeTavern` handler |
 | `src/reducer/index.ts` | Modify | Wire up new handler |
 | `src/systems/director/service.ts` | Modify | Apply effects to spawning logic |
 | `src/time/tick.ts` | Modify | Apply goldMultiplier to income |
-| `src/frontend/ui/UpgradePanel.ts` | Create | UI component (after frontend merge) |
-| `src/frontend/scenes/HUDScene.ts` | Modify | Integrate UpgradePanel (after frontend merge) |
+| `src/frontend/ui/UpgradePanel.ts` | Create *(conditional)* UI component |
+| `src/frontend/scenes/HUDScene.ts` | Modify *(conditional)* Integrate UpgradePanel |
 | `tests/unit/upgradeBranches.test.ts` | Create | Config and cost formula tests |
 | `tests/unit/getUpgradeEffects.test.ts` | Create | Effects function tests |
 | `tests/unit/reducer-upgradeTavern.test.ts` | Create | Action handler tests |
 | `tests/integration/tavern-upgrades.test.ts` | Create | Integration tests |
+
+**\* = Frontend files are conditional on require `feature/frontend-phaser` branch to be merged to `develop` first.*
 
 ---
 
 ## 6. Key Tests
 
 ### Test Helpers (following existing pattern)
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // Following pattern from tests/unit/reducer.test.ts
 
@@ -515,20 +468,15 @@ function createStateWithUpgrades(
 
   return {
     ...state,
-    wallet: {
-      ...state.wallet,
-      gold,
-    },
-    tavern: {
-      ...state.tavern,
-      upgrades,
-    },
+    wallet: { ...state.wallet, gold },
+    tavern: { ...state.tavern, upgrades },
   };
 }
 ```
 
 ### Reducer Tests
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // tests/unit/reducer-upgradeTavern.test.ts
 
@@ -552,84 +500,105 @@ function createStateWithUpgrades(
 }
 
 describe("UPGRADE_TAVERN action handling", () => {
-  it("increases branch level and deducts gold", () => {
-    const state = createStateWithUpgrades({ bar: 0 }, 100000); // 10 gold
-    const result = reduce(state, upgradeTavern('bar'), Date.now());
+  describe("successful upgrades", () => {
+    it("increases branch level and deducts gold", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 100000); // 10 gold
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
 
-    expect(result.state.tavern.upgrades['bar']).toBe(1);
-    expect(result.state.wallet.gold).toBe(0); // 10 - 10 = 0
-  });
+      expect(result.state.tavern.upgrades['bar']).toBe(1);
+      expect(result.state.wallet.gold).toBe(0); // 10 - 10 = 0
+    });
 
-  it("does nothing when not enough gold", () => {
-    const state = createStateWithUpgrades({ bar: 0 }, 50000); // 5 gold
-    const result = reduce(state, upgradeTavern('bar'), Date.now());
+    it("does nothing when not enough gold", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 50000); // 5 gold
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
 
-    expect(result.state.tavern.upgrades['bar']).toBe(0);
-    expect(result.state.wallet.gold).toBe(50000);
-    expect(result.error).toBeDefined();
-  });
+      expect(result.state.tavern.upgrades['bar']).toBe(0);
+      expect(result.state.wallet.gold).toBe(50000);
+      expect(result.error).toBeDefined();
+    });
 
-  it("does nothing when at max level", () => {
-    const state = createStateWithUpgrades({ bar: 5 }, 10000000);
-    const result = reduce(state, upgradeTavern('bar'), Date.now());
+    it("does nothing when at max level", () => {
+      const state = createStateWithUpgrades({ bar: 5 }, 10000000);
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
 
-    expect(result.state.tavern.upgrades['bar']).toBe(5);
-    expect(result.error).toBeDefined();
-  });
+      expect(result.state.tavern.upgrades['bar']).toBe(5);
+      expect(result.error).toBeDefined();
+    });
 
-  it("costs double each level (exponential)", () => {
-    // Level 0→1: 10 gold
-    const state0 = createStateWithUpgrades({ bar: 0 }, 100000);
-    const result0 = reduce(state0, upgradeTavern('bar'), Date.now());
-    expect(result0.state.wallet.gold).toBe(0);
+    it("costs double each level (exponential)", () => {
+      // Level 0→1: 10 gold
+      const state0 = createStateWithUpgrades({ bar: 0 }, 100000);
+      const result0 = reduce(state0, upgradeTavern('bar'), Date.now());
+      expect(result0.state.wallet.gold).toBe(0);
 
-    // Level 1→2: 20 gold
-    const state1 = createStateWithUpgrades({ bar: 1 }, 200000);
-    const result1 = reduce(state1, upgradeTavern('bar'), Date.now());
-    expect(result1.state.wallet.gold).toBe(0);
+      // Level 1→2: 20 gold
+      const state1 = createStateWithUpgrades({ bar: 1 }, 200000);
+      const result1 = reduce(state1, upgradeTavern('bar'), Date.now());
+      expect(result1.state.wallet.gold).toBe(0);
 
-    // Level 2→3: 40 gold
-    const state2 = createStateWithUpgrades({ bar: 2 }, 400000);
-    const result2 = reduce(state2, upgradeTavern('bar'), Date.now());
-    expect(result2.state.wallet.gold).toBe(0);
-  });
+      // Level 2→3: 40 gold
+      const state2 = createStateWithUpgrades({ bar: 2 }, 400000);
+      const result2 = reduce(state2, upgradeTavern('bar'), Date.now());
+      expect(result2.state.wallet.gold).toBe(0);
+    });
 
-  it("increases overall tavern level", () => {
-    const state = createStateWithUpgrades({}, 10000000);
-    expect(state.tavern.level).toBe(0);
+    it("increases overall tavern level", () => {
+      const state = createStateWithUpgrades({}, 10000000);
+      expect(state.tavern.level).toBe(0);
 
-    const result1 = reduce(state, upgradeTavern('bar'), Date.now());
-    expect(result1.state.tavern.level).toBe(1);
+      const result1 = reduce(state, upgradeTavern('bar'), Date.now());
+      expect(result1.state.tavern.level).toBe(1);
 
-    const result2 = reduce(result1.state, upgradeTavern('kitchen'), Date.now());
-    expect(result2.state.tavern.level).toBe(2);
-  });
+      const result2 = reduce(result1.state, upgradeTavern('kitchen'), Date.now());
+      expect(result2.state.tavern.level).toBe(2);
+    });
 
-  it("emits TAVERN_UPGRADE_APPLIED event on success", () => {
-    const state = createStateWithUpgrades({ bar: 0 }, 100000);
-    const result = reduce(state, upgradeTavern('bar'), Date.now());
+    it("emits TAVERN_UPGRADE_APPLIED event on success", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 100000);
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
 
-    const appliedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_APPLIED");
-    expect(appliedEvents).toHaveLength(1);
-    expect(appliedEvents[0]).toMatchObject({
-      branchId: 'bar',
-      newLevel: 1,
+      const appliedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_APPLIED");
+      expect(appliedEvents).toHaveLength(1);
+      expect(appliedEvents[0]).toMatchObject({
+        branchId: 'bar',
+        newLevel: 1,
+      });
+    });
+
+    it("emits TAVERN_UPGRADE_REJECTED event on failure", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 0); // No gold
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
+
+      const rejectedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_REJECTED");
+      expect(rejectedEvents).toHaveLength(1);
+      expect(rejectedEvents[0]?.reason).toBe("INSUFFICIENT_GOLD");
     });
   });
 
-  it("emits TAVERN_UPGRADE_REJECTED event on failure", () => {
-    const state = createStateWithUpgrades({ bar: 0 }, 0); // No gold
-    const result = reduce(state, upgradeTavern('bar'), Date.now());
+  describe("edge cases", () => {
+    it("handles corrupted state (level > maxLevel)", () => {
+      const state = createStateWithUpgrades({ bar: 10 }, 10000000); // Level 10 > max 5
+      const result = reduce(state, upgradeTavern('bar'), Date.now());
 
-    const rejectedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_REJECTED");
-    expect(rejectedEvents).toHaveLength(1);
-    expect(rejectedEvents[0]?.reason).toBe("INSUFFICIENT_GOLD");
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("CORRUPTED_STATE");
+    });
+
+    it("rejects invalid branch ID", () => {
+      const state = createStateWithUpgrades({}, 10000000);
+      const result = reduce(state, { type: "UPGRADE_TAVERN", branchId: "invalid" as any }, Date.now());
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("INVALID_BRANCH");
+    });
   });
 });
 ```
 
 ### Effects Tests
-
+#
+> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 ```typescript
 // tests/unit/getUpgradeEffects.test.ts
 
