@@ -80,5 +80,7 @@ export function calculateTotalIncome(roster: Record<string, HeroState>): GoldU {
 export function calculateTotalIncomeWithMultiplier(state: GameState): GoldU {
   const effects = getUpgradeEffects(state.tavern.upgrades);
   const baseIncome = calculateTotalIncome(state.heroes.roster);
-  return Math.floor(baseIncome * effects.goldMultiplier) as GoldU;
+  // Use fixed-point arithmetic: multiply by 1000, then divide
+  const goldMultiplierU = Math.round(effects.goldMultiplier * 1000);
+  return Math.floor((baseIncome * goldMultiplierU) / 1000) as GoldU;
 }

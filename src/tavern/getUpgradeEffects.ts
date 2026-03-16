@@ -1,11 +1,23 @@
 import type { UpgradeEffects } from "./types";
-import { UPGRADE_BRANCHES } from "../config/upgradeBranches";
+import { UPGRADE_BRANCHES, type UpgradeBranchId } from "../config/upgradeBranches";
+
+/**
+ * Normalizes a level value to ensure it's within valid bounds.
+ * Clamps to [0, maxLevel] for the given branch.
+ */
+function normalizeLevel(branchId: UpgradeBranchId, level: number | undefined): number {
+  if (level === undefined || !Number.isInteger(level)) {
+    return 0;
+  }
+  const maxLevel = UPGRADE_BRANCHES[branchId].maxLevel;
+  return Math.min(Math.max(level, 0), maxLevel);
+}
 
 export function getUpgradeEffects(upgrades: Record<string, number>): UpgradeEffects {
-  const barLevel = upgrades["bar"] ?? 0;
-  const kitchenLevel = upgrades["kitchen"] ?? 0;
-  const roomsLevel = upgrades["rooms"] ?? 0;
-  const decorLevel = upgrades["decor"] ?? 0;
+  const barLevel = normalizeLevel("bar", upgrades["bar"]);
+  const kitchenLevel = normalizeLevel("kitchen", upgrades["kitchen"]);
+  const roomsLevel = normalizeLevel("rooms", upgrades["rooms"]);
+  const decorLevel = normalizeLevel("decor", upgrades["decor"]);
 
   return {
     goldMultiplier: UPGRADE_BRANCHES.bar.effects.goldMultiplier?.[barLevel] ?? 1,

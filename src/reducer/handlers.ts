@@ -312,8 +312,10 @@ export function handleCalculateOffline(
   // Calculate current income per second with tavern gold multiplier
   const baseIncomePerSecondU = calculateTotalIncome(state.heroes.roster);
   const { goldMultiplier } = getUpgradeEffects(state.tavern.upgrades);
+  // Use fixed-point arithmetic: multiply by 1000, then divide
+  const goldMultiplierU = Math.round(goldMultiplier * 1000);
   const incomePerSecondU = Math.floor(
-    baseIncomePerSecondU * goldMultiplier,
+    (baseIncomePerSecondU * goldMultiplierU) / 1000,
   ) as GoldU;
 
   // Calculate offline progress with cap enforcement
@@ -480,7 +482,7 @@ export function handleUpgradeTavern(
   // 3. Handle corrupted state (level > maxLevel)
   if (currentLevel > branch.maxLevel) {
     events.push(
-      tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"),
+      tavernUpgradeRejected(branchId, currentLevel, "CORRUPTED_STATE"),
     );
     return failure(state, events, corruptedState(branchId, currentLevel));
   }

@@ -56,5 +56,9 @@ export const UPGRADE_BRANCHES: Record<UpgradeBranchId, UpgradeBranchConfig> = {
 
 export function getUpgradeCost(branchId: UpgradeBranchId, currentLevel: number): GoldU {
   const branch = UPGRADE_BRANCHES[branchId];
+  // Validate level is within bounds
+  if (!Number.isInteger(currentLevel) || currentLevel < 0 || currentLevel > branch.maxLevel) {
+    throw new RangeError(`Invalid level ${currentLevel} for branch '${branchId}'`);
+  }
   return Math.floor(branch.baseCost * Math.pow(2, currentLevel)) as GoldU;
 }
