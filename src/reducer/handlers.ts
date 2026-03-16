@@ -23,6 +23,7 @@ import type {
   DomainEvent,
   GoldU,
   HeroState,
+  UpgradeTavernAction,
 } from "../types";
 import { success, failure } from "../types";
 import {
@@ -31,14 +32,20 @@ import {
   goldEarned,
   offlineProgressApplied,
   securityOfflineClamped,
+  tavernUpgradeApplied,
+  tavernUpgradeRejected,
 } from "../types/events";
-import { heroNotFound, insufficientGold, invalidLevels } from "../types/errors";
+import { heroNotFound, insufficientGold, invalidLevels, invalidBranch, tavernMaxLevelReached, insufficientGoldForUpgrade, corruptedState } from "../types/errors";
 import { processTick } from "../time/tick";
 import { calculateOfflineProgress } from "../time/offline";
 import { calculateTotalIncome } from "../economy/income";
-import { canUpgradeHero } from "../progression/canUpgrade";
 import { calculateTotalUpgradeCost, calculateAffordableUpgrades, TICK_MS } from "../config/balance";
 import { getHeroConfig, isValidHeroId } from "../config/heroes";
+import {
+  UPGRADE_BRANCHES,
+  getUpgradeCost,
+} from "../config/upgradeBranches";
+import type { UpgradeBranchId } from "../config/upgradeBranches";
 
 // ============================================================================
 // TICK HANDLER
@@ -418,4 +425,110 @@ export function applyMultipleTicks(
   }
 
   return success(currentState, allEvents);
+}
+
+// ============================================================================
+// UPGRADE TAVERN HANDLER
+// ============================================================================
+
+/**
+ * Handles an UPGRADE_TAVERN action, attempting to upgrade a tavern branch.
+ *
+ * This handler:
+ * 1. Validates the branch exists
+ * 2. Checks current level (handles corrupted state)
+ * 3. Validates not at max level
+ * 4. Calculates cost using getUpgradeCost
+ * 5. Validates gold sufficiency
+ * 6. Applies upgrade (updates wallet.gold, tavern.level, tavern.upgrades)
+ * 7. Emits appropriate event
+ *
+ * Events emitted:
+ * - TAVERN_UPGRADE_APPLIED: When upgrade succeeds
+ * - TAVERN_UPGRADE_REJECTED: When upgrade fails
+ *
+ * @param state - Current game state (will not be mutated)
+ * @param action - The UPGRADE_TAVERN action to process
+ * @param now - Current Unix timestamp in milliseconds
+ * @returns ReduceResult with new state and any emitted events
+ *
+ * @example
+ * // Successful upgrade
+ * const result = handleUpgradeTavern(state, { type: "UPGRADE_TAVERN", branchId: "bar" }, Date.now());
+ * // result.events contains TAVERN_UPGRADE_APPLIED
+ *
+ * @example
+ * // Failed upgrade (at max level)
+ * const result = handleUpgradeTavern(state, { type: "UPGRADE_TAVERN", branchId: "bar" }, Date.now());
+ * // result.events contains TAVERN_UPGRADE_REJECTED
+ * // result.error contains TavernError
+ */
+export function handleUpgradeTavern(
+  state: GameState,
+  action: UpgradeTavernAction,
+  now: number
+): ReduceResult {
+  const { branchId } = action;
+  const events: DomainEvent[] = [];
+
+  // 1. Validate branch exists
+  const branch = UPGRADE_BRANCHES[branchId as UpgradeBranchId];
+  if (!branch) {
+    events.push(tavernUpgradeRejected(branchId, 0, "INVALID_BRANCH"));
+    return failure(state, events, invalidBranch(branchId));
+  }
+
+  // 2. Get current level (default 0)
+  const currentLevel = state.tavern.upgrades[branchId] ?? 0;
+
+  // 3. Handle corrupted state (level > maxLevel)
+  if (currentLevel > branch.maxLevel) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"));
+    return failure(state, events, corruptedState(branchId, currentLevel));
+  }
+
+  // 4. Check: already max level?
+  if (currentLevel >= branch.maxLevel) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, "MAX_LEVEL_REACHED"));
+    return failure(state, events, tavernMaxLevelReached(branchId));
+  }
+
+  // 5. Calculate cost
+  const cost = getUpgradeCost(branchId as UpgradeBranchId, currentLevel);
+
+  // 6. Check: enough gold?
+  const availableGold = state.wallet.gold;
+  if (availableGold < cost) {
+    events.push(tavernUpgradeRejected(branchId, currentLevel, "INSUFFICIENT_GOLD"));
+    return failure(state, events, insufficientGoldForUpgrade(branchId, cost, availableGold));
+  }
+
+  // 7. Apply upgrade
+  const newLevel = currentLevel + 1;
+  const newGold = state.wallet.gold - cost;
+
+  const newState: GameState = {
+    ...state,
+    wallet: {
+      ...state.wallet,
+      gold: newGold,
+    },
+    tavern: {
+      ...state.tavern,
+      level: state.tavern.level + 1,
+      upgrades: {
+        ...state.tavern.upgrades,
+        [branchId]: newLevel,
+      },
+    },
+    meta: {
+      ...state.meta,
+      lastSeenAtMs: now,
+    },
+  };
+
+  // 8. Emit event
+  events.push(tavernUpgradeApplied(branchId, newLevel, cost));
+
+  return success(newState, events);
 }

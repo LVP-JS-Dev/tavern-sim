@@ -13,7 +13,22 @@ import {
   corruptedState,
   isTavernError,
 } from "../../src/types/errors";
-import type { GoldU } from "../../src/types";
+import type { GoldU, GameState } from "../../src/types";
+import { createInitialState } from "../../src/state/initial";
+import { handleUpgradeTavern } from "../../src/reducer/handlers";
+
+function createStateWithUpgrades(
+  upgrades: Record<string, number>,
+  gold: number = 10000000
+): GameState {
+  const now = 1700000000000;
+  const state = createInitialState(now, 12345);
+  return {
+    ...state,
+    wallet: { ...state.wallet, gold },
+    tavern: { ...state.tavern, upgrades },
+  };
+}
 
 describe("upgradeTavern action", () => {
   it("creates action with branchId", () => {
@@ -82,5 +97,72 @@ describe("tavern error factories", () => {
     const error = corruptedState("bar", 10);
     expect(error.code).toBe("CORRUPTED_STATE");
     expect(error.branchId).toBe("bar");
+  });
+});
+
+describe("handleUpgradeTavern", () => {
+  describe("successful upgrades", () => {
+    it("increases branch level and deducts gold", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 100000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+
+      expect(result.state.tavern.upgrades["bar"]).toBe(1);
+      expect(result.state.wallet.gold).toBe(0);
+      expect(result.error).toBeUndefined();
+    });
+
+    it("increases overall tavern level", () => {
+      const state = createStateWithUpgrades({}, 10000000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+      expect(result.state.tavern.level).toBe(2);
+    });
+
+    it("emits TAVERN_UPGRADE_APPLIED event", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 100000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+
+      const appliedEvents = result.events.filter(e => e.type === "TAVERN_UPGRADE_APPLIED");
+      expect(appliedEvents).toHaveLength(1);
+    });
+  });
+
+  describe("validation failures", () => {
+    it("rejects invalid branch ID", () => {
+      const state = createStateWithUpgrades({}, 10000000);
+      const result = handleUpgradeTavern(
+        state,
+        { type: "UPGRADE_TAVERN", branchId: "invalid" as any },
+        Date.now()
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("INVALID_BRANCH");
+    });
+
+    it("rejects when at max level", () => {
+      const state = createStateWithUpgrades({ bar: 5 }, 10000000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("MAX_LEVEL_REACHED");
+    });
+
+    it("rejects when not enough gold", () => {
+      const state = createStateWithUpgrades({ bar: 0 }, 50000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("INSUFFICIENT_GOLD_FOR_UPGRADE");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("handles corrupted state (level > maxLevel)", () => {
+      const state = createStateWithUpgrades({ bar: 10 }, 10000000);
+      const result = handleUpgradeTavern(state, upgradeTavern("bar"), Date.now());
+
+      expect(result.error).toBeDefined();
+      expect(result.error?.code).toBe("CORRUPTED_STATE");
+    });
   });
 });
