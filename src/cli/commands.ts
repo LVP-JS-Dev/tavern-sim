@@ -302,7 +302,7 @@ export function parseCommand(input: string): ParsedCommand {
   }
 
   const [command, ...args] = tokens;
-  const normalizedCommand = command.toLowerCase();
+  const normalizedCommand = command!.toLowerCase();
 
   switch (normalizedCommand) {
     case "status":
@@ -468,7 +468,7 @@ function parseTickCommand(input: string, args: string[]): TickCommand | UnknownC
     };
   }
 
-  const count = parsePositiveInt(args[0]);
+  const count = parsePositiveInt(args[0] ?? "");
   if (count === null) {
     return {
       type: "UNKNOWN",
@@ -495,7 +495,7 @@ function parseUpgradeCommand(input: string, args: string[]): UpgradeCommand | Un
     };
   }
 
-  const heroId = args[0];
+  const heroId = args[0]!;
 
   if (args.length === 1) {
     return { type: "UPGRADE", heroId, levels: 1, raw: input };
@@ -509,12 +509,12 @@ function parseUpgradeCommand(input: string, args: string[]): UpgradeCommand | Un
     };
   }
 
-  const levels = parsePositiveInt(args[1]);
+  const levels = parsePositiveInt(args[1] ?? "");
   if (levels === null) {
     return {
       type: "UNKNOWN",
       raw: input,
-      error: `Invalid level count: '${args[1]}'. Must be a positive integer.`,
+      error: `Invalid level count: '${args[1]!}'. Must be a positive integer.`,
     };
   }
 
@@ -540,7 +540,9 @@ function parseSaveCommand(input: string, args: string[]): SaveCommand | UnknownC
     };
   }
 
-  return { type: "SAVE", filename: args[0], raw: input };
+  return args[0] !== undefined
+    ? { type: "SAVE", filename: args[0], raw: input }
+    : { type: "SAVE", raw: input };
 }
 
 /**
@@ -559,7 +561,9 @@ function parseLoadCommand(input: string, args: string[]): LoadCommand | UnknownC
     };
   }
 
-  return { type: "LOAD", filename: args[0], raw: input };
+  return args[0] !== undefined
+    ? { type: "LOAD", filename: args[0], raw: input }
+    : { type: "LOAD", raw: input };
 }
 
 /**
@@ -571,7 +575,7 @@ function parseHelpCommand(input: string, args: string[]): HelpCommand {
   }
 
   // Help takes an optional command name
-  return { type: "HELP", command: args[0].toLowerCase(), raw: input };
+  return { type: "HELP", command: args[0]!.toLowerCase(), raw: input };
 }
 
 /**
@@ -586,7 +590,7 @@ function parseStartAdventureCommand(input: string, args: string[]): StartAdventu
     };
   }
 
-  const adventureType = args[0].toLowerCase();
+  const adventureType = args[0]!.toLowerCase();
   const validTypes = ['hunt', 'dungeon', 'escort', 'investigation'];
 
   if (!validTypes.includes(adventureType)) {
@@ -611,25 +615,26 @@ function parseStartAdventureCommand(input: string, args: string[]): StartAdventu
  * Parse log command arguments.
  */
 function parseLogCommand(input: string, args: string[]): LogCommand | UnknownCommand {
-  const filter: EventFilter = {};
+  let types: string[] | undefined;
+  let limit: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
     if (arg === '--type' && i + 1 < args.length) {
       // Support multiple --type flags
-      filter.types = filter.types || [];
-      filter.types = [...filter.types, args[++i]];
+      types = types || [];
+      types = [...types, args[++i]!];
     } else if (arg === '--limit' && i + 1 < args.length) {
-      const limit = parsePositiveInt(args[++i]);
-      if (limit === null) {
+      const parsedLimit = parsePositiveInt(args[++i]!);
+      if (parsedLimit === null) {
         return {
           type: "UNKNOWN",
           raw: input,
-          error: `Invalid limit value: '${args[i]}'. Must be a positive integer.`,
+          error: `Invalid limit value: '${args[i]!}'. Must be a positive integer.`,
         };
       }
-      filter.limit = limit;
+      limit = parsedLimit;
     } else {
       return {
         type: "UNKNOWN",
@@ -639,7 +644,17 @@ function parseLogCommand(input: string, args: string[]): LogCommand | UnknownCom
     }
   }
 
-  return { type: "LOG", filter: Object.keys(filter).length > 0 ? filter : undefined, raw: input };
+  const hasFilter = types !== undefined || limit !== undefined;
+
+  if (hasFilter) {
+    const filter: EventFilter = {
+      ...(types !== undefined && { types }),
+      ...(limit !== undefined && { limit }),
+    };
+    return { type: "LOG", filter, raw: input };
+  }
+
+  return { type: "LOG", raw: input };
 }
 
 /**
@@ -658,12 +673,12 @@ function parseEventsCommand(input: string, args: string[]): EventsCommand | Unkn
     };
   }
 
-  const limit = parsePositiveInt(args[0]);
+  const limit = parsePositiveInt(args[0] ?? "");
   if (limit === null) {
     return {
       type: "UNKNOWN",
       raw: input,
-      error: `Invalid limit: '${args[0]}'. Must be a positive integer.`,
+      error: `Invalid limit: '${args[0]!}'. Must be a positive integer.`,
     };
   }
 
@@ -756,6 +771,14 @@ export function commandToAction(
     case "EXIT":
     case "EMPTY":
     case "UNKNOWN":
+    case "LOG":
+    case "EVENTS":
+    case "NOTIFICATIONS":
+    case "MARK_READ":
+    case "START_ADVENTURE":
+    case "ADVENTURES":
+    case "VISITORS":
+    case "WORLD":
       return null;
   }
 }

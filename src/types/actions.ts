@@ -205,7 +205,9 @@ export function tick(): TickAction {
  * @param levels - Number of levels to attempt (defaults to 1)
  */
 export function upgradeHero(heroId: string, levels?: number): UpgradeHeroAction {
-  return { type: "UPGRADE_HERO", heroId, levels };
+  return levels !== undefined
+    ? { type: "UPGRADE_HERO", heroId, levels }
+    : { type: "UPGRADE_HERO", heroId };
 }
 
 /**

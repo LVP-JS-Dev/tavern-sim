@@ -48,14 +48,14 @@ export interface MigrationResult {
  * Error thrown when a migration fails.
  */
 export class MigrationError extends Error {
+  override readonly name = "MigrationError";
   constructor(
     message: string,
     public readonly fromVersion: string,
     public readonly toVersion: string,
-    public readonly cause?: unknown
+    public override readonly cause?: unknown
   ) {
     super(message);
-    this.name = "MigrationError";
   }
 }
 
@@ -106,7 +106,7 @@ function migrateV010ToV020(state: Record<string, unknown>): Record<string, unkno
   return {
     ...state,
     meta: {
-      ...(state.meta as Record<string, unknown>),
+      ...(state['meta'] as Record<string, unknown>),
       version: "0.2.0",
     },
     // Add new system slices with empty initial states
@@ -191,9 +191,9 @@ function compareVersions(a: string, b: string): number {
  * @returns Version string or undefined if not found
  */
 function extractVersion(state: Record<string, unknown>): string | undefined {
-  const meta = state.meta as Record<string, unknown> | undefined;
-  if (meta && typeof meta.version === "string") {
-    return meta.version;
+  const meta = state['meta'] as Record<string, unknown> | undefined;
+  if (meta && typeof meta['version'] === "string") {
+    return meta['version'];
   }
   return undefined;
 }
@@ -267,7 +267,7 @@ function getMigrationPath(
  * if (result.error) {
  *   console.error("Migration failed:", result.error.message);
  * } else {
- *   console.log("Migrated to version:", result.state.meta.version);
+ *   console.log("Migrated to version:", result.state['meta'].version);
  * }
  *
  * @example
@@ -289,7 +289,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
       SCHEMA_VERSION
     );
     return {
-      state: state as GameState, // Return as-is, let caller handle
+      state: state as unknown as GameState, // Return as-is, let caller handle
       events,
       error,
     };
@@ -303,7 +303,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
         currentVersion,
         SCHEMA_VERSION
       );
-      return { state: state as GameState, events, error };
+      return { state: state as unknown as GameState, events, error };
     }
     return { state, events };
   }
@@ -315,7 +315,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
       currentVersion,
       SCHEMA_VERSION
     );
-    return { state: state as GameState, events, error };
+    return { state: state as unknown as GameState, events, error };
   }
 
   // Case 4: State is older - find and apply migration path
@@ -327,7 +327,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
       currentVersion,
       SCHEMA_VERSION
     );
-    return { state: state as GameState, events, error };
+    return { state: state as unknown as GameState, events, error };
   }
 
   // Apply migrations in sequence
@@ -344,7 +344,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
         currentVersion,
         SCHEMA_VERSION
       );
-      return { state: currentState as GameState, events, error };
+      return { state: currentState as unknown as GameState, events, error };
     }
 
     return { state: currentState, events };
@@ -355,7 +355,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
       SCHEMA_VERSION,
       err
     );
-    return { state: currentState as GameState, events, error };
+    return { state: currentState as unknown as GameState, events, error };
   }
 }
 
@@ -374,7 +374,7 @@ export function migrateState(state: Record<string, unknown>): MigrationResult {
  *   const newState = {
  *     ...state,
  *     meta: {
- *       ...(state.meta as Record<string, unknown>),
+ *       ...(state['meta'] as Record<string, unknown>),
  *       version: "0.2.0",
  *     },
  *   };

@@ -10,9 +10,8 @@ export class WorldServiceImpl implements WorldService {
 
     // Advance time
     const newTickInDay = state.tickInDay + 1;
-    const todIndex = TOD_ORDER.indexOf(state.timeOfDay);
     const newTodIndex = Math.floor(newTickInDay / TICKS_PER_TOD) % TOD_ORDER.length;
-    const newTimeOfDay = TOD_ORDER[newTodIndex];
+    const newTimeOfDay = TOD_ORDER[newTodIndex] ?? state.timeOfDay;
     const newDayNumber = state.dayNumber + Math.floor(newTickInDay / (TICKS_PER_TOD * TOD_ORDER.length));
 
     // Weather change

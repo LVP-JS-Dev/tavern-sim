@@ -95,7 +95,7 @@ export class HUDScene extends Phaser.Scene {
       ease: 'Power2',
       onComplete: () => {
         this.toastContainer?.destroy();
-        this.toastContainer = undefined;
+        delete this.toastContainer;
       },
     });
   }

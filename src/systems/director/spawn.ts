@@ -6,7 +6,7 @@
  */
 import type { RngStream } from '../../core/rng';
 import type { Visitor, VisitorType, DirectorState } from './types';
-import { VISITOR_SPAWN_CHANCE, VISITOR_TYPE_WEIGHTS } from './constants';
+import { VISITOR_SPAWN_CHANCE } from './constants';
 
 /**
  * Attempts to spawn a visitor. Returns null if spawn chance fails.

@@ -34,7 +34,7 @@ export class AdventureServiceImpl {
 
     // Check max adventures
     const activeCount = ctx.state.adventures.adventures.filter(
-      a => a.status === 'in_progress' || a.status === 'preparing'
+      a => a.status === 'active' || a.status === 'preparing'
     ).length;
 
     if (activeCount >= MAX_ADVENTURES_ACTIVE) {
@@ -42,7 +42,7 @@ export class AdventureServiceImpl {
     }
 
     const rng = ctx.rng.createStream('adventure');
-    const duration = ADVENTURE_BASE_DURATION_MS[type];
+    const duration = ADVENTURE_BASE_DURATION_MS[type] ?? ADVENTURE_BASE_DURATION_MS['hunt'] ?? 60000;
     const difficulty = rng.nextInt(MIN_DIFFICULTY, MAX_DIFFICULTY);
     const rarity = this.pickRarity(rng);
 
@@ -64,7 +64,7 @@ export class AdventureServiceImpl {
    */
   updateProgress(ctx: AdventureContext): readonly Adventure[] {
     return ctx.state.adventures.adventures.map(adventure => {
-      if (adventure.status !== 'in_progress') {
+      if (adventure.status !== 'active') {
         return adventure;
       }
 
@@ -110,7 +110,7 @@ export class AdventureServiceImpl {
    * Generate loot for a completed adventure.
    */
   private generateLoot(rng: RngStream, adventure: Adventure): LootDrop[] {
-    const dropCount = LOOT_DROP_RATES[adventure.type];
+    const dropCount = LOOT_DROP_RATES[adventure.type] ?? 1;
     const loot: LootDrop[] = [];
 
     for (let i = 0; i < dropCount; i++) {
@@ -137,7 +137,7 @@ export class AdventureServiceImpl {
     const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
     for (const rarity of rarities) {
-      cumulative += RARITY_WEIGHTS[rarity];
+      cumulative += RARITY_WEIGHTS[rarity] ?? 0;
       if (roll <= cumulative) {
         return rarity;
       }

@@ -16,7 +16,7 @@
  * @module reducer
  */
 
-import type { GameState, ReduceResult, Action, DomainEvent } from "../types";
+import type { GameState, ReduceResult, Action } from "../types";
 import { success, failure, invalidAction } from "../types";
 import {
   isTickAction,

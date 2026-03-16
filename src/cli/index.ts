@@ -219,7 +219,7 @@ function handleAdventures(state: CliState): string {
   const lines = ["📋 Active Adventures:", ""];
   for (const adv of adventures) {
     const progress = Math.round(adv.progress * 100);
-    const status = adv.status === 'completed' ? '✅' : adv.status === 'in_progress' ? '🔄' : '⏳';
+    const status = adv.status === 'completed' ? '✅' : adv.status === 'active' ? '🔄' : '⏳';
     lines.push(`  ${status} ${adv.id}: ${adv.type} (${progress}%) - Heroes: ${adv.heroIds.join(', ')}`);
   }
   return lines.join("\n");
@@ -252,7 +252,7 @@ function handleVisitors(state: CliState): string {
  * @param command - Start adventure command
  * @returns Formatted output string
  */
-function handleStartAdventure(state: CliState, command: { adventureType: string; heroIds: readonly string[] }): string {
+function handleStartAdventure(_state: CliState, command: { adventureType: string; heroIds: readonly string[] }): string {
   // For now, just acknowledge the command
   // Full implementation would use the adventure service
   return `⚔️ Starting ${command.adventureType} adventure with heroes: ${command.heroIds.join(', ')}`;
@@ -298,7 +298,7 @@ function handleLog(state: CliState, command: { filter?: { since?: number; until?
  * @param command - Events command
  * @returns Formatted output string
  */
-function handleEvents(state: CliState, command: { limit?: number }): string {
+function handleEvents(_state: CliState, _command: { limit?: number }): string {
   // For now, return a placeholder since we don't track recent domain events in state
   // In a full implementation, this would show events from the last tick
   return "📋 Recent domain events:\n(No recent events to display)";

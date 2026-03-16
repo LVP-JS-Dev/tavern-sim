@@ -3,9 +3,8 @@
  *
  * Manages visitor spawning and lifecycle for the tavern.
  */
-import type { RngService } from '../../core/rng';
 import type { DirectorState, DirectorContext, DirectorResult, Visitor } from './types';
-import { MAX_VISITORS, MAX_VISITOR_STAY_MS } from './constants';
+import { MAX_VISITOR_STAY_MS } from './constants';
 import { spawnVisitor, shouldDepart } from './spawn';
 import { getUpgradeEffects } from '../../tavern';
 import type { GameState } from '../../types';
@@ -14,7 +13,7 @@ export class DirectorServiceImpl {
   /**
    * Check if a new visitor can spawn.
    */
-  canSpawn(state: DirectorState, rosterSize: number, gameState: GameState): boolean {
+  canSpawn(state: DirectorState, _rosterSize: number, gameState: GameState): boolean {
     const effects = getUpgradeEffects(gameState.tavern.upgrades);
     return state.visitors.length < effects.maxCapacity;
   }

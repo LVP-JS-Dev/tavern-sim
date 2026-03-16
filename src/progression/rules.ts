@@ -123,7 +123,7 @@ export const VALIDATION_REASONS = {
 export function calculateAppliedLevels(
   availableGold: number,
   costPerLevel: number,
-  currentLevel: number
+  _currentLevel: number
 ): number {
   // Handle edge cases
   if (availableGold <= 0 || costPerLevel <= 0) {

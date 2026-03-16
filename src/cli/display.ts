@@ -554,7 +554,7 @@ export function formatEvent(event: DomainEvent): string {
       return `⏰ Applied offline progress: ${formatGoldWithSuffix(event.goldEarned)} over ${formatDuration(event.deltaMs)}`;
 
     case "SECURITY_OFFLINE_CLAMPED":
-      return `⚠️ Offline time capped at ${formatDuration(event.clampedToMs)} (was ${formatDuration(event.originalDeltaMs)})`;
+      return `⚠️ Offline time capped at ${formatDuration(event.cappedDeltaMs)} (requested ${formatDuration(event.requestedDeltaMs)})`;
 
     default:
       return `Event: ${JSON.stringify(event)}`;
