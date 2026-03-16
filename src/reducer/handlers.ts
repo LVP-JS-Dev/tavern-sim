@@ -55,6 +55,7 @@ import {
 import { getHeroConfig, isValidHeroId } from "../config/heroes";
 import { UPGRADE_BRANCHES, getUpgradeCost } from "../config/upgradeBranches";
 import type { UpgradeBranchId } from "../config/upgradeBranches";
+import { getUpgradeEffects } from "../tavern";
 
 // ============================================================================
 // TICK HANDLER
@@ -308,8 +309,12 @@ export function handleCalculateOffline(
   const events: DomainEvent[] = [];
   const lastSeenAtMs = state.meta.lastSeenAtMs;
 
-  // Calculate current income per second
-  const incomePerSecondU = calculateTotalIncome(state.heroes.roster);
+  // Calculate current income per second with tavern gold multiplier
+  const baseIncomePerSecondU = calculateTotalIncome(state.heroes.roster);
+  const { goldMultiplier } = getUpgradeEffects(state.tavern.upgrades);
+  const incomePerSecondU = Math.floor(
+    baseIncomePerSecondU * goldMultiplier,
+  ) as GoldU;
 
   // Calculate offline progress with cap enforcement
   const offlineResult = calculateOfflineProgress(
