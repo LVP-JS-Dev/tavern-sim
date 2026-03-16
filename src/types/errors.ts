@@ -11,6 +11,8 @@
  * @module types/errors
  */
 
+import type { GoldU } from "./state";
+
 // ============================================================================
 // ERROR CODES
 // ============================================================================
@@ -38,7 +40,11 @@ export type ErrorCode =
   | "FILE_NOT_FOUND"
   // Validation errors
   | "INVALID_ACTION"
-  | "INVALID_LEVELS";
+  | "INVALID_LEVELS"
+  // Tavern-related errors
+  | "INVALID_BRANCH"
+  | "INSUFFICIENT_GOLD_FOR_UPGRADE"
+  | "CORRUPTED_STATE";
 
 // ============================================================================
 // HERO ERROR
@@ -164,6 +170,29 @@ export interface ValidationError {
 }
 
 // ============================================================================
+// TAVERN ERROR
+// ============================================================================
+
+/**
+ * Error occurring during tavern upgrade operations.
+ * Covers upgrade validation failures and state corruption issues.
+ */
+export interface TavernError {
+  readonly type: "TAVERN_ERROR";
+  readonly code:
+    | "INVALID_BRANCH"
+    | "MAX_LEVEL_REACHED"
+    | "INSUFFICIENT_GOLD_FOR_UPGRADE"
+    | "CORRUPTED_STATE";
+
+  /** ID of the upgrade branch involved in the error */
+  readonly branchId: string;
+
+  /** Human-readable description of what went wrong */
+  readonly message: string;
+}
+
+// ============================================================================
 // DOMAIN ERROR UNION
 // ============================================================================
 
@@ -216,7 +245,8 @@ export type DomainError =
   | TimeError
   | StateError
   | PersistenceError
-  | ValidationError;
+  | ValidationError
+  | TavernError;
 
 // ============================================================================
 // ERROR TYPE GUARDS
@@ -257,6 +287,13 @@ export function isPersistenceError(
  */
 export function isValidationError(error: DomainError): error is ValidationError {
   return error.type === "VALIDATION_ERROR";
+}
+
+/**
+ * Type guard to check if an error is a TavernError.
+ */
+export function isTavernError(error: DomainError): error is TavernError {
+  return error.type === "TAVERN_ERROR";
 }
 
 // ============================================================================
@@ -472,5 +509,69 @@ export function invalidLevels(levels: unknown, reason: string): ValidationError 
     message: `Invalid levels value: ${reason}`,
     field: "levels",
     context: { levels },
+  };
+}
+
+// ============================================================================
+// TAVERN ERROR FACTORIES
+// ============================================================================
+
+/**
+ * Creates an INVALID_BRANCH error for tavern upgrades.
+ * @param branchId - The ID of the branch that doesn't exist
+ */
+export function invalidBranch(branchId: string): TavernError {
+  return {
+    type: "TAVERN_ERROR",
+    code: "INVALID_BRANCH",
+    branchId,
+    message: `Invalid upgrade branch: ${branchId}`,
+  };
+}
+
+/**
+ * Creates a MAX_LEVEL_REACHED error for tavern upgrades.
+ * Note: This is different from the hero version which takes a second parameter.
+ * @param branchId - The ID of the branch at max level
+ */
+export function tavernMaxLevelReached(branchId: string): TavernError {
+  return {
+    type: "TAVERN_ERROR",
+    code: "MAX_LEVEL_REACHED",
+    branchId,
+    message: `Branch ${branchId} is already at max level`,
+  };
+}
+
+/**
+ * Creates an INSUFFICIENT_GOLD_FOR_UPGRADE error.
+ * @param branchId - The ID of the branch being upgraded
+ * @param cost - Amount of gold required for the upgrade
+ * @param available - Amount of gold available
+ */
+export function insufficientGoldForUpgrade(
+  branchId: string,
+  cost: GoldU,
+  available: GoldU
+): TavernError {
+  return {
+    type: "TAVERN_ERROR",
+    code: "INSUFFICIENT_GOLD_FOR_UPGRADE",
+    branchId,
+    message: `Insufficient gold: need ${cost} to upgrade ${branchId}, have ${available}`,
+  };
+}
+
+/**
+ * Creates a CORRUPTED_STATE error for tavern upgrades.
+ * @param branchId - The ID of the branch with corrupted state
+ * @param level - The level that exceeds maxLevel
+ */
+export function corruptedState(branchId: string, level: number): TavernError {
+  return {
+    type: "TAVERN_ERROR",
+    code: "CORRUPTED_STATE",
+    branchId,
+    message: `Corrupted state: branch ${branchId} has level ${level} which exceeds max`,
   };
 }

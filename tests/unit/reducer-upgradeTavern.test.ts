@@ -6,6 +6,13 @@ import {
   isTavernUpgradeAppliedEvent,
   isTavernUpgradeRejectedEvent,
 } from "../../src/types/events";
+import {
+  invalidBranch,
+  tavernMaxLevelReached as maxLevelReached,
+  insufficientGoldForUpgrade,
+  corruptedState,
+  isTavernError,
+} from "../../src/types/errors";
 import type { GoldU } from "../../src/types";
 
 describe("upgradeTavern action", () => {
@@ -47,5 +54,33 @@ describe("tavern upgrade events", () => {
     expect(isTavernUpgradeAppliedEvent(rejected)).toBe(false);
     expect(isTavernUpgradeRejectedEvent(rejected)).toBe(true);
     expect(isTavernUpgradeRejectedEvent(applied)).toBe(false);
+  });
+});
+
+describe("tavern error factories", () => {
+  it("invalidBranch creates error", () => {
+    const error = invalidBranch("unknown");
+    expect(error.type).toBe("TAVERN_ERROR");
+    expect(error.code).toBe("INVALID_BRANCH");
+    expect(error.branchId).toBe("unknown");
+  });
+
+  it("maxLevelReached creates error", () => {
+    const error = maxLevelReached("bar");
+    expect(error.code).toBe("MAX_LEVEL_REACHED");
+    expect(error.branchId).toBe("bar");
+  });
+
+  it("insufficientGoldForUpgrade creates error", () => {
+    const error = insufficientGoldForUpgrade("kitchen", 150000 as GoldU, 100000 as GoldU);
+    expect(error.code).toBe("INSUFFICIENT_GOLD_FOR_UPGRADE");
+    expect(error.branchId).toBe("kitchen");
+    expect(isTavernError(error)).toBe(true);
+  });
+
+  it("corruptedState creates error", () => {
+    const error = corruptedState("bar", 10);
+    expect(error.code).toBe("CORRUPTED_STATE");
+    expect(error.branchId).toBe("bar");
   });
 });
