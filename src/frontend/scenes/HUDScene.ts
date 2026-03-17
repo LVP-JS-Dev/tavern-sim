@@ -1,9 +1,9 @@
 import Phaser from 'phaser';
-import { getBridge, consumeOfflineProgress } from '../index';
-import { GoldDisplay } from '../ui/GoldDisplay';
-import { TavernUpgradePanel } from '../ui/TavernUpgradePanel';
-import type { StateBridge } from '../bridge/types';
-import type { GameState, GoldU } from '../../types';
+import { getBridge, consumeOfflineProgress } from '@/frontend/index';
+import { GoldDisplay } from '@/frontend/ui/GoldDisplay';
+import { TavernUpgradePanel } from '@/frontend/ui/TavernUpgradePanel';
+import type { StateBridge } from '@/frontend/bridge/types';
+import type { GameState, GoldU } from '@/types';
 
 export class HUDScene extends Phaser.Scene {
   private bridge!: StateBridge;
@@ -19,6 +19,9 @@ export class HUDScene extends Phaser.Scene {
 
   create(): void {
     this.bridge = getBridge();
+
+    // Register shutdown handler for cleanup
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
 
     // Create gold display
     this.goldDisplay = new GoldDisplay(this, 10, 10);

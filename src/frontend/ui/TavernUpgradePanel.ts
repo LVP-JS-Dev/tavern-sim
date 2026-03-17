@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
-import { getBridge } from '../index';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../config';
-import { UPGRADE_BRANCHES, getUpgradeCost, type UpgradeBranchId, type UpgradeBranchConfig } from '../../config/upgradeBranches';
-import { upgradeTavern } from '../../types/actions';
-import { isTavernUpgradeAppliedEvent } from '../../types/events';
-import type { StateBridge } from '../bridge/types';
-import type { GameState, GoldU } from '../../types';
+import { getBridge } from '@/frontend/index';
+import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/frontend/config';
+import { UPGRADE_BRANCHES, getUpgradeCost, type UpgradeBranchId, type UpgradeBranchConfig } from '@/config/upgradeBranches';
+import { upgradeTavern } from '@/types/actions';
+import { isTavernUpgradeAppliedEvent } from '@/types/events';
+import type { StateBridge } from '@/frontend/bridge/types';
+import type { GameState, GoldU } from '@/types';
 
 /** Panel position when hidden (off-screen bottom) */
 const PANEL_HIDDEN_Y = CANVAS_HEIGHT + 300;
@@ -284,12 +284,12 @@ export class TavernUpgradePanel {
   private formatGold(goldU: GoldU): string {
     const gold = goldU / 1000;
     if (gold >= 1000000) {
-      return `${(gold / 1000000).toFixed(1)}M`;
+      return `${(gold / 1000000).toFixed(1)}M g`;
     }
     if (gold >= 1000) {
-      return `${(gold / 1000).toFixed(1)}K`;
+      return `${(gold / 1000).toFixed(1)}K g`;
     }
-    return `${gold.toFixed(1)}`;
+    return `${gold.toFixed(1)}g`;
   }
 
   private onUpgradeClick(branchId: UpgradeBranchId): void {
