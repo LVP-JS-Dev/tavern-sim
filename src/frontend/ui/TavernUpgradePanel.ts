@@ -27,6 +27,7 @@ interface UpgradeCard {
   costText: Phaser.GameObjects.Text;
   effectText: Phaser.GameObjects.Text;
   button: Phaser.GameObjects.Container;
+  hitArea: Phaser.GameObjects.Rectangle;
 }
 
 /**
@@ -220,6 +221,7 @@ export class TavernUpgradePanel {
       costText,
       effectText,
       button,
+      hitArea,
     };
   }
 
@@ -245,6 +247,7 @@ export class TavernUpgradePanel {
         card.costText.setColor('#6a6');
         card.button.setAlpha(0.6);
         card.button.setVisible(true);
+        card.hitArea.disableInteractive();
       } else {
         // Calculate cost
         const cost = getUpgradeCost(branchId, currentLevel);
@@ -255,6 +258,11 @@ export class TavernUpgradePanel {
         card.costText.setColor(canAfford ? '#ffd700' : '#f66');
         card.button.setAlpha(canAfford ? 1 : 0.5);
         card.button.setVisible(true);
+        if (canAfford) {
+          card.hitArea.setInteractive({ useHandCursor: true });
+        } else {
+          card.hitArea.disableInteractive();
+        }
       }
     });
   }
