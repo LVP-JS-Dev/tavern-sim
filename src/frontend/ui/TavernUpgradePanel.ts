@@ -3,6 +3,7 @@ import { getBridge } from '../index';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../config';
 import { UPGRADE_BRANCHES, getUpgradeCost, type UpgradeBranchId, type UpgradeBranchConfig } from '../../config/upgradeBranches';
 import { upgradeTavern } from '../../types/actions';
+import { isTavernUpgradeAppliedEvent } from '../../types/events';
 import type { StateBridge } from '../bridge/types';
 import type { GameState, GoldU } from '../../types';
 
@@ -40,6 +41,7 @@ export class TavernUpgradePanel {
   private cards: Map<UpgradeBranchId, UpgradeCard> = new Map();
   private isOpen = false;
   private unsubscribe?: () => void;
+  private unsubscribeEvents?: () => void;
   private lastState?: GameState;
 
   constructor(scene: Phaser.Scene) {
@@ -101,6 +103,14 @@ export class TavernUpgradePanel {
     this.unsubscribe = this.bridge.subscribe((state) => {
       this.lastState = state;
       this.updateCards(state);
+    });
+
+    // Subscribe to events for upgrade feedback
+    this.unsubscribeEvents = this.bridge.subscribeToEvents((event) => {
+      if (isTavernUpgradeAppliedEvent(event)) {
+        // Play visual feedback only when upgrade is actually applied
+        this.scene.cameras.main.flash(100, 255, 215, 0, false);
+      }
     });
 
     // Initial update
@@ -293,11 +303,8 @@ export class TavernUpgradePanel {
     const cost = getUpgradeCost(branchId, currentLevel);
     if (this.lastState.wallet.gold < cost) return;
 
-    // Dispatch upgrade action
+    // Dispatch upgrade action - flash will be triggered by TAVERN_UPGRADE_APPLIED event
     this.bridge.dispatch(upgradeTavern(branchId));
-
-    // Play feedback sound/effect
-    this.scene.cameras.main.flash(100, 255, 215, 0, false);
   }
 
   open(): void {
@@ -354,6 +361,7 @@ export class TavernUpgradePanel {
 
   destroy(): void {
     this.unsubscribe?.();
+    this.unsubscribeEvents?.();
     this.panel.destroy();
     this.backdrop.destroy();
   }
