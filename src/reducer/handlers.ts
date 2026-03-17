@@ -91,7 +91,7 @@ import { getUpgradeEffects } from "../tavern";
  */
 export function handleTick(
   state: GameState,
-  action: TickAction,
+  _action: TickAction,
   now: number,
 ): ReduceResult {
   // Delegate to the processTick function from time/tick module
@@ -232,7 +232,6 @@ export function handleUpgradeHero(
   // 8. Apply the upgrade
   const newLevel = heroState.level + affordableLevels;
   const newGold = state.wallet.gold - totalCost;
-  const newLifetimeEarnedGold = state.wallet.lifetimeEarnedGold; // Don't change lifetime earned on spend
 
   // Create updated hero state with new level and income
   const newHeroState: HeroState = {

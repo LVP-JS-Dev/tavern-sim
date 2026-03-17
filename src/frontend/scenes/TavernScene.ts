@@ -94,7 +94,6 @@ export class TavernScene extends Phaser.Scene {
   }
 
   private syncHeroes(state: GameState): void {
-    const roster = state.heroes.roster;
     const order = state.heroes.order;
     const currentHeroIds = new Set(this.heroes.keys());
 

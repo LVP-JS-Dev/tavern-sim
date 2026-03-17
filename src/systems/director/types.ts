@@ -3,7 +3,6 @@
  *
  * Manages visitor spawning and lifecycle for the tavern.
  */
-import type { GoldU } from '../../types';
 
 /** Visitor types with different behaviors */
 export type VisitorType = 'patron' | 'adventurer' | 'merchant' | 'noble';

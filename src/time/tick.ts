@@ -41,7 +41,7 @@ interface TickContext {
  *
  * Note: For Alpha, this is a placeholder for future timer functionality.
  */
-function processTimers(ctx: TickContext): void {
+function processTimers(_ctx: TickContext): void {
   // Placeholder for future timer processing
   // In future versions, this will handle:
   // - Scheduled events
@@ -55,7 +55,7 @@ function processTimers(ctx: TickContext): void {
  *
  * Note: For Alpha, this is a placeholder for future command queue functionality.
  */
-function processCommands(ctx: TickContext): void {
+function processCommands(_ctx: TickContext): void {
   // Placeholder for future command queue processing
   // In future versions, this will handle:
   // - Queued player actions
@@ -69,7 +69,7 @@ function processCommands(ctx: TickContext): void {
  *
  * Note: For Alpha, this is optional - visitor system not implemented.
  */
-function processDirector(ctx: TickContext): void {
+function processDirector(_ctx: TickContext): void {
   // Placeholder for future director system
   // In future versions, this will handle:
   // - Visitor spawning
@@ -121,7 +121,7 @@ function processHeroes(ctx: TickContext): void {
  *
  * Note: For Alpha, this is optional - adventure system not implemented.
  */
-function processAdventures(ctx: TickContext): void {
+function processAdventures(_ctx: TickContext): void {
   // Placeholder for future adventure system
   // In future versions, this will handle:
   // - Adventure progress
@@ -135,7 +135,7 @@ function processAdventures(ctx: TickContext): void {
  *
  * Note: For Alpha, this is optional - world system not implemented.
  */
-function processWorld(ctx: TickContext): void {
+function processWorld(_ctx: TickContext): void {
   // Placeholder for future world system
   // In future versions, this will handle:
   // - Weather changes
@@ -149,7 +149,7 @@ function processWorld(ctx: TickContext): void {
  *
  * Note: Events are already accumulated in ctx.events, so this is a no-op for Alpha.
  */
-function flushEvents(ctx: TickContext): void {
+function flushEvents(_ctx: TickContext): void {
   // Events are already accumulated in the events array
   // This stage exists for future event batching/optimization
 }

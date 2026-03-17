@@ -67,7 +67,7 @@ export class SeededRng implements RngService {
         if (array.length === 0) throw new Error('Cannot pick from empty array');
         const val = advance();
         const idx = Math.floor(val * array.length);
-        return array[idx];
+        return array[idx]!;
       },
 
       sample: <T>(array: readonly T[], count: number): T[] => {
@@ -78,7 +78,7 @@ export class SeededRng implements RngService {
         for (let i = 0; i < maxCount; i++) {
           const val = advance();
           const idx = Math.floor(val * available.length);
-          result.push(available[idx]);
+          result.push(available[idx]!);
           available.splice(idx, 1);
         }
 

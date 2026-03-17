@@ -46,7 +46,7 @@ export const adventuresPlugin: TickPlugin = {
     const activeAdventures: Adventure[] = [];
 
     for (const adventure of updatedAdventures) {
-      if (adventure.status === 'in_progress' && adventure.progress >= 1.0) {
+      if (adventure.status === 'active' && adventure.progress >= 1.0) {
         completedAdventures.push(adventure);
       } else {
         activeAdventures.push(adventure);

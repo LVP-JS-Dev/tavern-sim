@@ -21,13 +21,13 @@ import type { GameState } from "../types";
  * Error thrown when storage operations fail.
  */
 export class StorageError extends Error {
+  override readonly name = "StorageError";
   constructor(
     message: string,
     public readonly code: "READ_ERROR" | "WRITE_ERROR" | "NOT_FOUND" | "INVALID_DATA",
-    public readonly cause?: unknown
+    public override readonly cause?: unknown
   ) {
     super(message);
-    this.name = "StorageError";
   }
 }
 

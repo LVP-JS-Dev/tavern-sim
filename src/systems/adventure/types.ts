@@ -3,7 +3,6 @@
  *
  * Manages hero adventures, quests, and expeditions.
  */
-import type { GoldU } from '../../types';
 
 /** Types of adventures heroes can embark on */
 export type AdventureType = 'hunt' | 'dungeon' | 'escort' | 'investigation';

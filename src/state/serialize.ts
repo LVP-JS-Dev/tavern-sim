@@ -23,9 +23,9 @@ import {
  * Error thrown when serialization or deserialization fails.
  */
 export class SerializationError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  override readonly name = "SerializationError";
+  constructor(message: string, public override readonly cause?: unknown) {
     super(message);
-    this.name = "SerializationError";
   }
 }
 
